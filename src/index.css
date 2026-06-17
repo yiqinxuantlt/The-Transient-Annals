@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper-50: 255 253 246;
+  --paper-100: 247 240 223;
+  --paper-200: 234 223 197;
+  --paper-300: 215 197 155;
+  --ink-900: 37 33 27;
+  --ink-800: 48 42 34;
+  --ink-700: 81 72 60;
+  --ink-600: 105 94 78;
+  --ink-500: 129 116 100;
+  --cinnabar: 159 76 63;
+  --jade: 85 120 111;
+  --goldline: 185 154 95;
+  --shadow-soft: 72 54 31;
+  --shadow-archive: 72 54 31;
+  color: rgb(var(--ink-900));
+  background: rgb(var(--paper-100));
+  font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark {
+  --paper-50: 35 31 25;
+  --paper-100: 24 22 19;
+  --paper-200: 69 58 44;
+  --paper-300: 120 97 62;
+  --ink-900: 249 242 224;
+  --ink-800: 232 221 196;
+  --ink-700: 205 190 163;
+  --ink-600: 177 160 132;
+  --ink-500: 145 128 102;
+  --cinnabar: 214 111 88;
+  --jade: 128 176 160;
+  --goldline: 214 177 104;
+  --shadow-soft: 0 0 0;
+  --shadow-archive: 0 0 0;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100dvh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 20% 10%, rgb(var(--goldline) / 0.16), transparent 30%),
+    linear-gradient(135deg, rgb(var(--paper-50) / 0.92), rgb(var(--paper-200) / 0.76)),
+    rgb(var(--paper-100));
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  opacity: 0.34;
+  background-image:
+    linear-gradient(rgb(var(--ink-700) / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--ink-700) / 0.026) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at 18% 12%, rgb(var(--goldline) / 0.14), transparent 32%),
+    radial-gradient(circle at 78% 8%, rgb(var(--jade) / 0.12), transparent 28%),
+    linear-gradient(135deg, rgb(var(--paper-100)), rgb(12 11 10));
+}
+
+.dark body::before {
+  opacity: 0.22;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.fsl-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(129, 116, 100, 0.42) transparent;
+}
+
+.fsl-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.fsl-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(129, 116, 100, 0.34);
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+.react-flow__node-default,
+.react-flow__node-input,
+.react-flow__node-output {
+  font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+.react-flow__controls-button {
+  border-color: rgb(var(--ink-900) / 0.08) !important;
+  background: rgb(var(--paper-50) / 0.92) !important;
+  color: rgb(var(--ink-900)) !important;
+}
+
+.react-flow__minimap {
+  border: 1px solid rgb(var(--ink-900) / 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.react-flow__handle {
+  border-color: rgb(var(--paper-50));
+  background: rgb(var(--ink-900));
+}
