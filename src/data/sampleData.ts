@@ -125,6 +125,7 @@ const baseRelations = [
     targetId: 'entity-friend',
     type: '信任 / 隐瞒',
     description: '情感基础很深，但旧友掌握的信息不断侵蚀两人的信任。',
+    style: { lineStyle: 'dashed', tone: 'cinnabar', animated: true },
   },
   {
     id: 'relation-main-mentor',
@@ -132,6 +133,7 @@ const baseRelations = [
     targetId: 'entity-mentor',
     type: '指导 / 保留信息',
     description: '导师负责引导主角成长，却为了保护主角延迟揭示真相。',
+    style: { lineStyle: 'solid', tone: 'goldline' },
   },
   {
     id: 'relation-main-rival',
@@ -139,6 +141,7 @@ const baseRelations = [
     targetId: 'entity-rival',
     type: '价值观冲突',
     description: '两人都受旧案影响，却对秩序、自由与牺牲有相反理解。',
+    style: { lineStyle: 'dashed', tone: 'cinnabar', animated: true },
   },
   {
     id: 'relation-rival-order',
@@ -146,6 +149,7 @@ const baseRelations = [
     targetId: 'entity-order',
     type: '所属',
     description: '宿敌是组织在边境线的执行者，也是组织理念的人格化投影。',
+    style: { lineStyle: 'solid', tone: 'ink' },
   },
 ] satisfies FushengProject['entityRelations']
 
@@ -156,6 +160,7 @@ const baseEventLinks = [
     targetEventId: 'event-reveal',
     type: '伏笔 / 回收',
     description: '信件上的印记在身份揭露时得到解释。',
+    style: { lineStyle: 'dashed', tone: 'goldline', animated: true },
   },
   {
     id: 'eventlink-secret-reveal',
@@ -163,6 +168,7 @@ const baseEventLinks = [
     targetEventId: 'event-reveal',
     type: '导致',
     description: '旧友的隐瞒让主角更晚知道真相，也加深了揭露时的情感冲击。',
+    style: { lineStyle: 'solid', tone: 'cinnabar' },
   },
   {
     id: 'eventlink-reveal-final',
@@ -170,8 +176,26 @@ const baseEventLinks = [
     targetEventId: 'event-final',
     type: '推动',
     description: '身份真相迫使主角主动面对反派组织和宿敌。',
+    style: { lineStyle: 'solid', tone: 'jade', animated: true },
   },
 ] satisfies FushengProject['eventLinks']
+
+const entityNodePositions = {
+  'entity-main': { x: 40, y: 135 },
+  'entity-friend': { x: 350, y: 45 },
+  'entity-mentor': { x: 345, y: 305 },
+  'entity-rival': { x: 705, y: 145 },
+  'entity-order': { x: 1020, y: 100 },
+  'entity-place': { x: 720, y: 340 },
+} satisfies FushengProject['entityNodePositions']
+
+const eventNodePositions = {
+  'event-letter': { x: 30, y: 165 },
+  'event-secret': { x: 335, y: 55 },
+  'event-leave': { x: 335, y: 315 },
+  'event-reveal': { x: 670, y: 170 },
+  'event-final': { x: 1010, y: 170 },
+} satisfies FushengProject['eventNodePositions']
 
 const baseLibraryItems = [
   {
@@ -198,6 +222,7 @@ export const createSampleProject = (
   category: ProjectCategory = 'novel',
   subtitle = '用一条身份谜团线串起人物、事件、关系与伏笔回收。',
 ): FushengProject => ({
+  schemaVersion: 2,
   id,
   title,
   subtitle,
@@ -212,6 +237,8 @@ export const createSampleProject = (
   entityRelations: baseRelations.map((item) => ({ ...item })),
   eventLinks: baseEventLinks.map((item) => ({ ...item })),
   libraryItems: baseLibraryItems.map((item) => ({ ...item, tags: [...item.tags] })),
+  entityNodePositions: { ...entityNodePositions },
+  eventNodePositions: { ...eventNodePositions },
 })
 
 export const sampleProjects: FushengProject[] = [

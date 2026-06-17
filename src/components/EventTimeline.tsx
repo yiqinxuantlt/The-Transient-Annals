@@ -1,4 +1,5 @@
 import { CalendarDays, MapPin, UsersRound } from 'lucide-react'
+import { useMemo } from 'react'
 import type { Entity, StoryEvent } from '../types'
 
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
 }
 
 export default function EventTimeline({ events, entities = [], selectedId, onSelect, compact }: Props) {
-  const sortedEvents = [...events].sort((a, b) => a.order - b.order)
+  const sortedEvents = useMemo(() => [...events].sort((a, b) => a.order - b.order), [events])
 
   if (sortedEvents.length === 0) {
     return (
@@ -21,9 +22,9 @@ export default function EventTimeline({ events, entities = [], selectedId, onSel
   }
 
   return (
-    <div className="relative space-y-5 pl-8">
+    <div className="relative space-y-6 pl-8">
       <div className="absolute left-3 top-2 h-[calc(100%-1rem)] w-px bg-gradient-to-b from-goldline via-goldline/55 to-transparent" />
-      {sortedEvents.map((event) => {
+      {sortedEvents.map((event, index) => {
         const relatedNames = event.relatedEntityIds
           .map((id) => entities.find((entity) => entity.id === id)?.name)
           .filter(Boolean)
@@ -36,13 +37,14 @@ export default function EventTimeline({ events, entities = [], selectedId, onSel
             type="button"
             onClick={() => onSelect(event.id)}
             className={[
-              'group relative block w-full rounded-lg border bg-paper-50 p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-goldline/45 hover:shadow-archive',
+              'group relative block w-full overflow-hidden rounded-lg border bg-paper-50 p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-goldline/45 hover:shadow-archive',
               selectedId === event.id
-                ? 'border-cinnabar/55 ring-2 ring-cinnabar/12'
+                ? 'border-cinnabar/55 bg-gradient-to-br from-paper-50 to-cinnabar/5 ring-2 ring-cinnabar/12'
                 : 'border-ink-900/10',
               compact ? 'p-4' : '',
             ].join(' ')}
           >
+            <span className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-goldline/60 via-cinnabar/45 to-transparent opacity-0 transition group-hover:opacity-100" />
             <span className="absolute -left-[34px] top-6 flex h-5 w-5 items-center justify-center rounded-full border border-goldline bg-paper-50 shadow-soft">
               <span className="h-2 w-2 rounded-full bg-cinnabar" />
             </span>
@@ -54,8 +56,8 @@ export default function EventTimeline({ events, entities = [], selectedId, onSel
                 </p>
                 <h3 className="mt-3 font-serif text-xl font-semibold text-ink-900">{event.title}</h3>
               </div>
-              <span className="w-fit rounded-full border border-ink-900/10 bg-paper-100/65 px-3 py-1 text-xs text-ink-700">
-                序 {event.order}
+              <span className="w-fit rounded-full border border-ink-900/10 bg-paper-100/65 px-3 py-1 text-xs text-ink-700 shadow-sm">
+                {String(index + 1).padStart(2, '0')} / 序 {event.order}
               </span>
             </div>
 

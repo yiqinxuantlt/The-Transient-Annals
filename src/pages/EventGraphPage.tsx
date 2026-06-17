@@ -1,31 +1,39 @@
 import { Plus, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import DetailPanel from '../components/DetailPanel'
+import EdgeStyleControls from '../components/EdgeStyleControls'
 import GraphCanvas from '../components/GraphCanvas'
 import { useProject } from '../hooks/useProject'
 import { useFushengluStore } from '../store/useFushengluStore'
-import type { DetailSelection } from '../types'
+import type { DetailSelection, EventLinkDraft } from '../types'
 
 const linkTypes = ['导致', '影响', '转折', '伏笔', '回收', '对照', '背景']
 
 export default function EventGraphPage() {
   const project = useProject()
   const addEventLink = useFushengluStore((state) => state.addEventLink)
+  const updateEventLinkStyle = useFushengluStore((state) => state.updateEventLinkStyle)
   const deleteEventLink = useFushengluStore((state) => state.deleteEventLink)
+  const updateNodePosition = useFushengluStore((state) => state.updateEventNodePosition)
   const [selection, setSelection] = useState<DetailSelection>(
     project.events[0] ? { kind: 'event', id: project.events[0].id } : null,
   )
-  const initialLink = useMemo(
+  const initialLink = useMemo<EventLinkDraft>(
     () => ({
       sourceEventId: project.events[0]?.id || '',
       targetEventId: project.events[1]?.id || '',
       type: '导致',
       description: '',
+      style: { lineStyle: 'solid', tone: 'jade', animated: false },
     }),
     [project.events],
   )
   const [draft, setDraft] = useState(initialLink)
   const [composerOpen, setComposerOpen] = useState(false)
+  const selectedLink =
+    selection?.kind === 'eventLink'
+      ? project.eventLinks.find((link) => link.id === selection.id)
+      : undefined
 
   const openComposer = (
     sourceEventId = initialLink.sourceEventId,
@@ -118,6 +126,10 @@ export default function EventGraphPage() {
                 placeholder="连接说明"
                 className="min-h-24 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 py-3 text-sm outline-none"
               />
+              <EdgeStyleControls
+                value={draft.style}
+                onChange={(style) => setDraft((value) => ({ ...value, style }))}
+              />
               <button
                 type="button"
                 onClick={submit}
@@ -136,15 +148,23 @@ export default function EventGraphPage() {
             mode="events"
             onSelect={setSelection}
             onConnectNodes={({ sourceId, targetId }) => openComposer(sourceId, targetId)}
+            onNodePositionChange={(nodeId, position) =>
+              updateNodePosition(project.id, nodeId, position)
+            }
             toolbar={
-              <button
-                type="button"
-                onClick={() => openComposer()}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-jade/30 bg-paper-50/90 px-4 text-sm text-ink-800 shadow-soft backdrop-blur transition hover:bg-paper-50"
-              >
-                <Plus size={17} />
-                添加连接
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => openComposer()}
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-jade/30 bg-paper-50/90 px-4 text-sm text-ink-800 shadow-soft backdrop-blur transition hover:bg-paper-50"
+                >
+                  <Plus size={17} />
+                  添加连接
+                </button>
+                <span className="hidden min-h-10 items-center rounded-lg border border-ink-900/10 bg-paper-50/80 px-3 text-xs text-ink-600 shadow-soft backdrop-blur md:inline-flex">
+                  伏笔、回收、转折可用不同线型
+                </span>
+              </>
             }
           />
         </div>
@@ -152,6 +172,18 @@ export default function EventGraphPage() {
 
       <div className="space-y-5">
         <DetailPanel project={project} selection={selection} />
+        {selectedLink ? (
+          <section className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
+            <p className="text-xs text-ink-500">连线样式</p>
+            <h3 className="mt-1 font-serif text-xl font-semibold">{selectedLink.type}</h3>
+            <div className="mt-4">
+              <EdgeStyleControls
+                value={selectedLink.style}
+                onChange={(style) => updateEventLinkStyle(project.id, selectedLink.id, style)}
+              />
+            </div>
+          </section>
+        ) : null}
         <section className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
           <h3 className="font-serif text-xl font-semibold">因果线索</h3>
           <div className="mt-4 space-y-3">

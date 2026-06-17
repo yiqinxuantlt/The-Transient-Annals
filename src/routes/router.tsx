@@ -1,24 +1,41 @@
+/* eslint-disable react-refresh/only-export-components */
+import { lazy, Suspense, type ReactElement } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import RootLayout from '../layouts/RootLayout'
 import ProjectLayout from '../layouts/ProjectLayout'
-import HomePage from '../pages/HomePage'
-import ProjectsPage from '../pages/ProjectsPage'
-import ProjectDashboard from '../pages/ProjectDashboard'
-import EntitiesPage from '../pages/EntitiesPage'
-import EventsPage from '../pages/EventsPage'
-import TimelinePage from '../pages/TimelinePage'
-import RelationGraphPage from '../pages/RelationGraphPage'
-import EventGraphPage from '../pages/EventGraphPage'
-import LibraryPage from '../pages/LibraryPage'
-import ProjectSettingsPage from '../pages/ProjectSettingsPage'
+import RootLayout from '../layouts/RootLayout'
+
+const HomePage = lazy(() => import('../pages/HomePage'))
+const ProjectsPage = lazy(() => import('../pages/ProjectsPage'))
+const ProjectDashboard = lazy(() => import('../pages/ProjectDashboard'))
+const EntitiesPage = lazy(() => import('../pages/EntitiesPage'))
+const EventsPage = lazy(() => import('../pages/EventsPage'))
+const TimelinePage = lazy(() => import('../pages/TimelinePage'))
+const RelationGraphPage = lazy(() => import('../pages/RelationGraphPage'))
+const EventGraphPage = lazy(() => import('../pages/EventGraphPage'))
+const LibraryPage = lazy(() => import('../pages/LibraryPage'))
+const ProjectSettingsPage = lazy(() => import('../pages/ProjectSettingsPage'))
+
+function page(element: ReactElement) {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-lg border border-goldline/20 bg-paper-50/80 p-6 text-sm text-ink-600 shadow-soft">
+          正在展开案卷...
+        </div>
+      }
+    >
+      {element}
+    </Suspense>
+  )
+}
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'projects', element: <ProjectsPage /> },
+      { index: true, element: page(<HomePage />) },
+      { path: 'projects', element: page(<ProjectsPage />) },
     ],
   },
   {
@@ -26,14 +43,14 @@ export const router = createBrowserRouter([
     element: <ProjectLayout />,
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
-      { path: 'dashboard', element: <ProjectDashboard /> },
-      { path: 'entities', element: <EntitiesPage /> },
-      { path: 'events', element: <EventsPage /> },
-      { path: 'timeline', element: <TimelinePage /> },
-      { path: 'relation-graph', element: <RelationGraphPage /> },
-      { path: 'event-graph', element: <EventGraphPage /> },
-      { path: 'library', element: <LibraryPage /> },
-      { path: 'settings', element: <ProjectSettingsPage /> },
+      { path: 'dashboard', element: page(<ProjectDashboard />) },
+      { path: 'entities', element: page(<EntitiesPage />) },
+      { path: 'events', element: page(<EventsPage />) },
+      { path: 'timeline', element: page(<TimelinePage />) },
+      { path: 'relation-graph', element: page(<RelationGraphPage />) },
+      { path: 'event-graph', element: page(<EventGraphPage />) },
+      { path: 'library', element: page(<LibraryPage />) },
+      { path: 'settings', element: page(<ProjectSettingsPage />) },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

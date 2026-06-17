@@ -1,4 +1,18 @@
 export type EntityType = 'person' | 'character' | 'organization' | 'place' | 'other'
+export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted'
+export type EdgeTone = 'cinnabar' | 'jade' | 'goldline' | 'ink'
+export type BackendStatus = 'checking' | 'online' | 'offline'
+
+export type GraphNodePosition = {
+  x: number
+  y: number
+}
+
+export type EdgeVisualStyle = {
+  lineStyle?: EdgeLineStyle
+  tone?: EdgeTone
+  animated?: boolean
+}
 
 export type Entity = {
   id: string
@@ -29,6 +43,7 @@ export type EntityRelation = {
   targetId: string
   type: string
   description?: string
+  style?: EdgeVisualStyle
 }
 
 export type EventLink = {
@@ -37,6 +52,7 @@ export type EventLink = {
   targetEventId: string
   type: string
   description?: string
+  style?: EdgeVisualStyle
 }
 
 export type LibraryItemKind = 'note' | 'quote' | 'source' | 'inspiration'
@@ -54,6 +70,7 @@ export type ProjectCategory = 'history' | 'novel' | 'script' | 'worldbuilding' |
 export type ThemeMode = 'light' | 'dark'
 
 export type FushengProject = {
+  schemaVersion: number
   id: string
   title: string
   subtitle: string
@@ -64,6 +81,8 @@ export type FushengProject = {
   entityRelations: EntityRelation[]
   eventLinks: EventLink[]
   libraryItems: LibraryItem[]
+  entityNodePositions: Record<string, GraphNodePosition>
+  eventNodePositions: Record<string, GraphNodePosition>
 }
 
 export type EntityDraft = Omit<Entity, 'id'>

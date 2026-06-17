@@ -1,29 +1,37 @@
 import { Plus, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import DetailPanel from '../components/DetailPanel'
+import EdgeStyleControls from '../components/EdgeStyleControls'
 import GraphCanvas from '../components/GraphCanvas'
 import { useProject } from '../hooks/useProject'
 import { useFushengluStore } from '../store/useFushengluStore'
-import type { DetailSelection } from '../types'
+import type { DetailSelection, EntityRelationDraft } from '../types'
 
 export default function RelationGraphPage() {
   const project = useProject()
   const addRelation = useFushengluStore((state) => state.addEntityRelation)
+  const updateRelationStyle = useFushengluStore((state) => state.updateEntityRelationStyle)
   const deleteRelation = useFushengluStore((state) => state.deleteEntityRelation)
+  const updateNodePosition = useFushengluStore((state) => state.updateEntityNodePosition)
   const [selection, setSelection] = useState<DetailSelection>(
     project.entities[0] ? { kind: 'entity', id: project.entities[0].id } : null,
   )
-  const initialRelation = useMemo(
+  const initialRelation = useMemo<EntityRelationDraft>(
     () => ({
       sourceId: project.entities[0]?.id || '',
       targetId: project.entities[1]?.id || '',
       type: '',
       description: '',
+      style: { lineStyle: 'solid', tone: 'cinnabar', animated: false },
     }),
     [project.entities],
   )
   const [draft, setDraft] = useState(initialRelation)
   const [composerOpen, setComposerOpen] = useState(false)
+  const selectedRelation =
+    selection?.kind === 'entityRelation'
+      ? project.entityRelations.find((relation) => relation.id === selection.id)
+      : undefined
 
   const openComposer = (sourceId = initialRelation.sourceId, targetId = initialRelation.targetId) => {
     setDraft((value) => ({
@@ -106,6 +114,10 @@ export default function RelationGraphPage() {
                 placeholder="关系说明"
                 className="min-h-24 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 py-3 text-sm outline-none"
               />
+              <EdgeStyleControls
+                value={draft.style}
+                onChange={(style) => setDraft((value) => ({ ...value, style }))}
+              />
               <button
                 type="button"
                 onClick={submit}
@@ -124,15 +136,23 @@ export default function RelationGraphPage() {
             mode="entities"
             onSelect={setSelection}
             onConnectNodes={({ sourceId, targetId }) => openComposer(sourceId, targetId)}
+            onNodePositionChange={(nodeId, position) =>
+              updateNodePosition(project.id, nodeId, position)
+            }
             toolbar={
-              <button
-                type="button"
-                onClick={() => openComposer()}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-goldline/30 bg-paper-50/90 px-4 text-sm text-ink-800 shadow-soft backdrop-blur transition hover:bg-paper-50"
-              >
-                <Plus size={17} />
-                添加关系
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => openComposer()}
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-goldline/30 bg-paper-50/90 px-4 text-sm text-ink-800 shadow-soft backdrop-blur transition hover:bg-paper-50"
+                >
+                  <Plus size={17} />
+                  添加关系
+                </button>
+                <span className="hidden min-h-10 items-center rounded-lg border border-ink-900/10 bg-paper-50/80 px-3 text-xs text-ink-600 shadow-soft backdrop-blur md:inline-flex">
+                  拖动节点可保存布局
+                </span>
+              </>
             }
           />
         </div>
@@ -140,6 +160,18 @@ export default function RelationGraphPage() {
 
       <div className="space-y-5">
         <DetailPanel project={project} selection={selection} />
+        {selectedRelation ? (
+          <section className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
+            <p className="text-xs text-ink-500">连线样式</p>
+            <h3 className="mt-1 font-serif text-xl font-semibold">{selectedRelation.type}</h3>
+            <div className="mt-4">
+              <EdgeStyleControls
+                value={selectedRelation.style}
+                onChange={(style) => updateRelationStyle(project.id, selectedRelation.id, style)}
+              />
+            </div>
+          </section>
+        ) : null}
         <section className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
           <h3 className="font-serif text-xl font-semibold">关系札记</h3>
           <div className="mt-4 space-y-3">

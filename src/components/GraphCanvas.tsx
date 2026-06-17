@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import ReactFlow, {
   Background,
+  ConnectionLineType,
   Controls,
   Handle,
   MarkerType,
@@ -14,7 +15,15 @@ import ReactFlow, {
   type Node,
   type NodeProps,
 } from 'reactflow'
-import type { DetailSelection, Entity, FushengProject, StoryEvent } from '../types'
+import type {
+  DetailSelection,
+  EdgeTone,
+  EdgeVisualStyle,
+  Entity,
+  FushengProject,
+  GraphNodePosition,
+  StoryEvent,
+} from '../types'
 import AvatarBadge from './AvatarBadge'
 
 type GraphConnection = {
@@ -29,6 +38,7 @@ type Props = {
   toolbar?: ReactNode
   onSelect?: (selection: DetailSelection) => void
   onConnectNodes?: (connection: GraphConnection) => void
+  onNodePositionChange?: (nodeId: string, position: GraphNodePosition) => void
 }
 
 type EntityNodeData = {
@@ -157,67 +167,128 @@ const nodeTypes = {
   archiveEvent: EventGraphNode,
 }
 
-function entityNode(entity: Entity, index: number, compact?: boolean): Node<GraphNodeData> {
+const toneColor: Record<EdgeTone, string> = {
+  cinnabar: 'rgb(var(--cinnabar))',
+  jade: 'rgb(var(--jade))',
+  goldline: 'rgb(var(--goldline))',
+  ink: 'rgb(var(--ink-700))',
+}
+
+const dashByLineStyle = {
+  solid: undefined,
+  dashed: '8 7',
+  dotted: '2 8',
+} satisfies Record<NonNullable<EdgeVisualStyle['lineStyle']>, string | undefined>
+
+function visualForEdge(
+  type: string,
+  fallbackTone: EdgeTone,
+  style?: EdgeVisualStyle,
+): Required<EdgeVisualStyle> & { color: string; dash?: string } {
+  const inferredDashed =
+    type.includes('隐瞒') ||
+    type.includes('冲突') ||
+    type.includes('伏笔') ||
+    type.includes('回收') ||
+    type.includes('转折')
+  const lineStyle = style?.lineStyle || (inferredDashed ? 'dashed' : 'solid')
+  const tone = style?.tone || fallbackTone
+  const animated = style?.animated ?? (type.includes('伏笔') || type.includes('推动') || type.includes('隐瞒'))
+
+  return {
+    lineStyle,
+    tone,
+    animated,
+    color: toneColor[tone],
+    dash: dashByLineStyle[lineStyle],
+  }
+}
+
+function graphEdge(
+  id: string,
+  source: string,
+  target: string,
+  label: string,
+  fallbackTone: EdgeTone,
+  style?: EdgeVisualStyle,
+): Edge {
+  const visual = visualForEdge(label, fallbackTone, style)
+
+  return {
+    id,
+    source,
+    target,
+    label,
+    type: 'smoothstep',
+    animated: visual.animated,
+    interactionWidth: 24,
+    markerEnd: { type: MarkerType.ArrowClosed, color: visual.color },
+    style: {
+      stroke: visual.color,
+      strokeWidth: 2.2,
+      strokeDasharray: visual.dash,
+      strokeLinecap: 'round',
+      filter: 'drop-shadow(0 6px 10px rgb(var(--shadow-soft) / 0.13))',
+    },
+    labelStyle: { fill: 'rgb(var(--ink-800))', fontSize: 12, fontWeight: 700 },
+    labelBgStyle: { fill: 'rgb(var(--paper-50))', fillOpacity: 0.92 },
+    labelBgPadding: [10, 6],
+    labelBgBorderRadius: 9,
+  }
+}
+
+function entityNode(
+  entity: Entity,
+  index: number,
+  compact?: boolean,
+  position?: GraphNodePosition,
+): Node<GraphNodeData> {
   return {
     id: entity.id,
     type: 'archiveEntity',
-    position: entityPositions[index % entityPositions.length],
+    position: position || entityPositions[index % entityPositions.length],
     data: { entity, compact },
   }
 }
 
-function eventNode(event: StoryEvent, index: number, compact?: boolean): Node<GraphNodeData> {
+function eventNode(
+  event: StoryEvent,
+  index: number,
+  compact?: boolean,
+  position?: GraphNodePosition,
+): Node<GraphNodeData> {
   return {
     id: event.id,
     type: 'archiveEvent',
-    position: eventPositions[index % eventPositions.length],
+    position: position || eventPositions[index % eventPositions.length],
     data: { event, compact },
   }
 }
 
 function buildGraph(project: FushengProject, mode: Props['mode'], compact?: boolean) {
   if (mode === 'entities') {
-    const nodes = project.entities.map((entity, index) => entityNode(entity, index, compact))
-    const edges: Edge[] = project.entityRelations.map((relation) => ({
-      id: relation.id,
-      source: relation.sourceId,
-      target: relation.targetId,
-      label: relation.type,
-      type: 'smoothstep',
-      animated: relation.type.includes('隐瞒') || relation.type.includes('冲突'),
-      markerEnd: { type: MarkerType.ArrowClosed, color: 'rgb(var(--cinnabar))' },
-      style: {
-        stroke: 'rgb(var(--cinnabar))',
-        strokeWidth: 1.8,
-        strokeDasharray: relation.type.includes('隐瞒') ? '6 5' : undefined,
-      },
-      labelStyle: { fill: 'rgb(var(--ink-800))', fontSize: 12, fontWeight: 700 },
-      labelBgStyle: { fill: 'rgb(var(--paper-50))', fillOpacity: 0.9 },
-      labelBgPadding: [9, 5],
-      labelBgBorderRadius: 8,
-    }))
+    const nodes = project.entities.map((entity, index) =>
+      entityNode(entity, index, compact, project.entityNodePositions?.[entity.id]),
+    )
+    const edges: Edge[] = project.entityRelations.map((relation) =>
+      graphEdge(
+        relation.id,
+        relation.sourceId,
+        relation.targetId,
+        relation.type,
+        'cinnabar',
+        relation.style,
+      ),
+    )
     return { nodes, edges }
   }
 
-  const nodes = project.events.map((event, index) => eventNode(event, index, compact))
-  const edges: Edge[] = project.eventLinks.map((link) => ({
-    id: link.id,
-    source: link.sourceEventId,
-    target: link.targetEventId,
-    label: link.type,
-    type: 'smoothstep',
-    animated: link.type.includes('伏笔') || link.type.includes('推动'),
-    markerEnd: { type: MarkerType.ArrowClosed, color: 'rgb(var(--jade))' },
-    style: {
-      stroke: 'rgb(var(--jade))',
-      strokeWidth: 1.8,
-      strokeDasharray: link.type.includes('伏笔') || link.type.includes('回收') ? '7 5' : undefined,
-    },
-    labelStyle: { fill: 'rgb(var(--ink-800))', fontSize: 12, fontWeight: 700 },
-    labelBgStyle: { fill: 'rgb(var(--paper-50))', fillOpacity: 0.9 },
-    labelBgPadding: [9, 5],
-    labelBgBorderRadius: 8,
-  }))
+  const nodes = project.events.map((event, index) =>
+    eventNode(event, index, compact, project.eventNodePositions?.[event.id]),
+  )
+  const edges: Edge[] = project.eventLinks.map((link) =>
+    graphEdge(link.id, link.sourceEventId, link.targetEventId, link.type, 'jade', link.style),
+  )
   return { nodes, edges }
 }
 
@@ -228,8 +299,9 @@ export default function GraphCanvas({
   toolbar,
   onSelect,
   onConnectNodes,
+  onNodePositionChange,
 }: Props) {
-  const graph = buildGraph(project, mode, compact)
+  const graph = useMemo(() => buildGraph(project, mode, compact), [compact, mode, project])
   const [nodes, setNodes, onNodesChange] = useNodesState(graph.nodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(graph.edges)
 
@@ -262,6 +334,13 @@ export default function GraphCanvas({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={connectNodes}
+        onNodeDragStop={(_, node) => {
+          if (compact) return
+          onNodePositionChange?.(node.id, {
+            x: Math.round(node.position.x),
+            y: Math.round(node.position.y),
+          })
+        }}
         onNodeClick={(_, node) =>
           onSelect?.({ kind: mode === 'entities' ? 'entity' : 'event', id: node.id })
         }
@@ -274,8 +353,13 @@ export default function GraphCanvas({
         fitView
         minZoom={0.32}
         maxZoom={1.45}
+        snapToGrid
+        snapGrid={[12, 12]}
         nodesDraggable={!compact}
         nodesConnectable={!compact && Boolean(onConnectNodes)}
+        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineStyle={{ stroke: 'rgb(var(--goldline))', strokeWidth: 2 }}
+        elevateEdgesOnSelect
         proOptions={{ hideAttribution: true }}
       >
         <Background color="rgb(var(--goldline))" gap={28} size={1} />

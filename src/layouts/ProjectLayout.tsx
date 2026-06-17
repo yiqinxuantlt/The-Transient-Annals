@@ -1,4 +1,5 @@
-﻿import { BookOpen, Search } from 'lucide-react'
+import clsx from 'clsx'
+import { BookOpen, Search } from 'lucide-react'
 import { Navigate, Outlet, useParams } from 'react-router-dom'
 import ProjectSidebar from '../components/ProjectSidebar'
 import ThemeToggle from '../components/ThemeToggle'
@@ -9,6 +10,7 @@ export default function ProjectLayout() {
   const project = useFushengluStore((state) =>
     state.projects.find((item) => item.id === projectId),
   )
+  const backendStatus = useFushengluStore((state) => state.backendStatus)
 
   if (!project) {
     return <Navigate to="/projects" replace />
@@ -31,6 +33,22 @@ export default function ProjectLayout() {
                 </div>
               </div>
               <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+                <span
+                  className={clsx(
+                    'inline-flex min-h-11 items-center justify-center rounded-lg border px-3 text-xs shadow-sm',
+                    backendStatus === 'online'
+                      ? 'border-jade/25 bg-jade/10 text-jade'
+                      : backendStatus === 'checking'
+                        ? 'border-goldline/25 bg-goldline/10 text-ink-600'
+                        : 'border-cinnabar/20 bg-cinnabar/10 text-cinnabar',
+                  )}
+                >
+                  {backendStatus === 'online'
+                    ? '案卷库已连接'
+                    : backendStatus === 'checking'
+                      ? '连接案卷库'
+                      : '本地模式'}
+                </span>
                 <label className="flex min-h-11 w-full items-center gap-2 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm text-ink-500 shadow-sm lg:w-80">
                   <Search size={17} />
                   <input
