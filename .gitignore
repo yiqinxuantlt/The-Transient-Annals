@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 server/data/*.json
+server/data/*.log
+server/data/*.pid
 server/data/*.tmp
 server/data/*.corrupt-*
 *.local
