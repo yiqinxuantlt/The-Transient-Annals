@@ -1,4 +1,5 @@
 import { Archive, GitBranch, Link2, ScrollText } from 'lucide-react'
+import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection, FushengProject } from '../types'
 import AvatarBadge from './AvatarBadge'
 
@@ -6,14 +7,7 @@ type Props = {
   project: FushengProject
   selection: DetailSelection
   title?: string
-}
-
-const entityTypeLabel = {
-  person: '历史人物',
-  character: '小说角色',
-  organization: '组织',
-  place: '地点',
-  other: '其他',
+  sticky?: boolean
 }
 
 const libraryKindLabel = {
@@ -29,7 +23,10 @@ function Tags({ tags }: { tags: string[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {tags.map((tag) => (
-        <span key={tag} className="rounded-full bg-goldline/12 px-3 py-1 text-xs text-ink-700">
+        <span
+          key={tag}
+          className="inline-flex min-h-7 items-center rounded-full bg-goldline/12 px-3 text-xs text-ink-700"
+        >
           {tag}
         </span>
       ))}
@@ -41,14 +38,15 @@ function Field({ label, value }: { label: string; value?: string | number }) {
   if (value === undefined || value === '') return null
 
   return (
-    <div>
+    <div className="rounded-lg border border-ink-900/8 bg-paper-50/55 p-3">
       <p className="text-xs text-ink-500">{label}</p>
       <p className="mt-1 text-sm leading-6 text-ink-800">{value}</p>
     </div>
   )
 }
 
-export default function DetailPanel({ project, selection, title = '档案详情' }: Props) {
+export default function DetailPanel({ project, selection, title = '案牍档案', sticky = false }: Props) {
+  const template = getProjectTemplate(project.templateId, project.category)
   let body = (
     <div className="rounded-lg border border-dashed border-ink-900/15 bg-paper-100/55 p-5 text-sm leading-6 text-ink-500">
       请选择人物、事件、关系或线索，右侧会显示完整档案。
@@ -63,15 +61,19 @@ export default function DetailPanel({ project, selection, title = '档案详情'
           <div className="flex items-start gap-3">
             <AvatarBadge entity={entity} size="lg" />
             <div>
-              <p className="text-xs text-ink-500">{entityTypeLabel[entity.type]}</p>
+              <p className="text-xs text-ink-500">{template.entityTypeLabels[entity.type]}</p>
               <h3 className="font-serif text-2xl font-semibold">{entity.name}</h3>
             </div>
           </div>
           <Tags tags={entity.tags} />
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             <Field label="身份" value={entity.identity} />
+            <Field label="时代 / 朝代" value={entity.dynasty} />
+            <Field label="生年" value={entity.birth} />
+            <Field label="卒年" value={entity.death} />
             <Field label="阵营 / 所属势力" value={entity.faction} />
-            <Field label="动机 / 目标" value={entity.motivation} />
+            <Field label={template.id === 'history' ? '政治目标 / 主要诉求' : '动机 / 目标'} value={entity.motivation} />
+            <Field label="人物弧光" value={entity.roleArc} />
             <Field label="简介" value={entity.description} />
           </div>
         </div>
@@ -99,11 +101,13 @@ export default function DetailPanel({ project, selection, title = '档案详情'
             </div>
           </div>
           <Tags tags={event.tags} />
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             <Field label="顺序" value={event.order} />
+            <Field label="章节 / 幕次" value={event.chapter} />
+            <Field label={template.id === 'history' ? '事件类型' : '情节类型'} value={event.eventType} />
             <Field label="地点" value={event.location} />
-            <Field label="相关人物 / 角色" value={relatedNames} />
-            <Field label="事件描述" value={event.description} />
+            <Field label={`相关${template.entityPlural}`} value={relatedNames} />
+            <Field label={template.id === 'history' ? '事件经过与影响' : '事件描述'} value={event.description} />
           </div>
         </div>
       )
@@ -123,7 +127,7 @@ export default function DetailPanel({ project, selection, title = '档案详情'
               <Link2 size={20} />
             </span>
             <div>
-              <p className="text-xs text-ink-500">人物关系</p>
+              <p className="text-xs text-ink-500">{template.relationLabel}</p>
               <h3 className="font-serif text-2xl font-semibold">{relation.type}</h3>
             </div>
           </div>
@@ -147,7 +151,7 @@ export default function DetailPanel({ project, selection, title = '档案详情'
               <GitBranch size={20} />
             </span>
             <div>
-              <p className="text-xs text-ink-500">事件连接</p>
+              <p className="text-xs text-ink-500">{template.eventLinkLabel}</p>
               <h3 className="font-serif text-2xl font-semibold">{link.type}</h3>
             </div>
           </div>
@@ -180,9 +184,24 @@ export default function DetailPanel({ project, selection, title = '档案详情'
   }
 
   return (
-    <aside className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
-      <p className="mb-5 text-xs text-ink-500">{title}</p>
-      {body}
+    <aside
+      className={[
+        'archive-card paper-grain rounded-lg border border-goldline/25 p-5 shadow-archive',
+        sticky ? 'xl:sticky xl:top-28 xl:max-h-[calc(100dvh-8rem)] xl:overflow-auto' : '',
+      ].join(' ')}
+    >
+      <div className="relative z-10">
+        <div className="mb-5 flex items-start justify-between gap-4 border-b border-ink-900/10 pb-4">
+          <div>
+            <p className="text-xs tracking-[0.22em] text-cinnabar">CASE FILE</p>
+            <h2 className="mt-1 font-serif text-xl font-semibold text-ink-900">{title}</h2>
+          </div>
+          <div className="seal-mark flex h-14 w-14 shrink-0 items-center justify-center rounded-sm font-serif text-xs font-semibold leading-4">
+            已归档
+          </div>
+        </div>
+        {body}
+      </div>
     </aside>
   )
 }

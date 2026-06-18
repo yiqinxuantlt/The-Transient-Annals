@@ -9,6 +9,7 @@
 ## 核心特性
 
 - 多项目案卷：每个项目独立保存人物、事件、关系、因果连接和资料。
+- 项目模板：新建项目时可选择「历史人物事件」或「小说人物情节」，不同模板拥有不同字段、导航文案、关系类型、事件连接类型和默认样例。
 - 人物志：支持新增、编辑、删除人物 / 角色 / 组织 / 地点，并可上传头像。
 - 事件簿：支持新增、编辑、删除事件，记录时间标签、地点、相关人物和标签。
 - 流年轴：按 `order` 展示纵向时间线，适合年代、章节和幕次梳理。
@@ -66,6 +67,9 @@ npm run preview  # 本地预览构建结果
 
 - `/`：产品首页
 - `/projects`：图谱项目列表
+- `/projects/new`：选择项目模板
+- `/projects/new?template=history`：创建历史人物事件项目
+- `/projects/new?template=fiction`：创建小说人物情节项目
 - `/projects/:projectId/dashboard`：项目总览
 - `/projects/:projectId/entities`：人物志
 - `/projects/:projectId/events`：事件簿
@@ -88,6 +92,7 @@ src/
 ├── pages/             # 多页面路由页面
 ├── routes/            # React Router 配置
 ├── store/             # Zustand 本地状态与持久化
+├── templates/         # 项目模板配置
 └── types/             # 业务数据类型
 
 server/
@@ -109,8 +114,18 @@ server/
 - `LibraryItem`：资料、摘录、备注和灵感片段。
 - `entityNodePositions` / `eventNodePositions`：图谱节点坐标。
 - `EdgeVisualStyle`：关系线的线型、颜色和流动效果。
+- `ProjectTemplateId`：项目模板标识，目前支持 `history` 和 `fiction`。
 
-当前数据结构带有 `schemaVersion: 2`。前端会优先连接本地后端 API，并同步到 `server/data/fushenglu-db.json`；如果后端没有启动，则回退到 localStorage，保证页面仍可使用。
+当前数据结构带有 `schemaVersion: 3`。前端会优先连接本地后端 API，并同步到 `server/data/fushenglu-db.json`；如果后端没有启动，则回退到 localStorage，保证页面仍可使用。
+
+## 项目模板
+
+「浮生录」使用同一套数据结构承载不同项目模板，不为历史和小说拆成两套系统。模板配置位于 `src/templates/projectTemplates.ts`，当前包含：
+
+- `history`：历史人物事件。侧重人物录、纪事簿、编年轴、史料库，字段包含时代 / 朝代、生卒、事件类型、历史因果等。
+- `fiction`：小说人物情节。侧重人物志、事件簿、流年轴、藏卷，字段包含角色动机、人物弧光、章节 / 幕次、伏笔回收等。
+
+新增项目会写入 `templateId`，本地存储和后端校验会保留该字段。旧项目没有 `templateId` 时，会按项目类型自动迁移：`history` 类型归入历史模板，其余归入小说模板。
 
 ## 后端接口
 

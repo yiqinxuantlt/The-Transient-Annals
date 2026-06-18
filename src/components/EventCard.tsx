@@ -33,6 +33,11 @@ export default function EventCard({
               {event.timeLabel || `顺序 ${event.order}`}
             </p>
             <h3 className="mt-2 font-serif text-xl font-semibold text-ink-900">{event.title}</h3>
+            {event.chapter || event.eventType ? (
+              <p className="mt-2 text-xs text-ink-500">
+                {[event.chapter, event.eventType].filter(Boolean).join(' · ')}
+              </p>
+            ) : null}
           </div>
           <span className="rounded-lg border border-goldline/30 bg-paper-50/60 px-3 py-2 text-sm text-ink-700">
             #{event.order}

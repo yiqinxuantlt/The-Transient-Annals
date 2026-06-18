@@ -149,7 +149,13 @@ app.post(
     const projectId = routeParam(request.params.projectId)
     const nextProject = await updateProject(projectId, (project) =>
       normalizeProject(
-        createSampleProject(project.id, project.title, project.category, project.subtitle),
+        createSampleProject(
+          project.id,
+          project.title,
+          project.category,
+          project.subtitle,
+          project.templateId,
+        ),
       ),
     )
 

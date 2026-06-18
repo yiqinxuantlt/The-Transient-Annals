@@ -1,8 +1,9 @@
-import type { FushengProject, ProjectCategory } from '../types'
+import { inferTemplateId } from '../templates/projectTemplates'
+import type { FushengProject, ProjectCategory, ProjectTemplateId } from '../types'
 
 const now = () => new Date().toISOString()
 
-const baseEntities = [
+const fictionEntities = [
   {
     id: 'entity-main',
     name: '主角',
@@ -10,6 +11,7 @@ const baseEntities = [
     identity: '失落家族的继承者',
     faction: '故乡旧族',
     motivation: '查明身世与故乡覆灭的真相',
+    roleArc: '从被动逃避真相，转向主动承担旧案留下的责任。',
     description: '故事的观察者与行动者，因一封神秘信件被迫离开熟悉的生活。',
     tags: ['核心视角', '身份谜团'],
   },
@@ -20,6 +22,7 @@ const baseEntities = [
     identity: '主角的童年伙伴',
     faction: '边境商队',
     motivation: '保护主角，同时掩盖过去的承诺',
+    roleArc: '从沉默守护走向坦白与共同承担。',
     description: '温和而谨慎，知道部分真相，却在关键节点选择沉默。',
     tags: ['隐瞒', '情感线'],
   },
@@ -30,6 +33,7 @@ const baseEntities = [
     identity: '古籍守卷人',
     faction: '藏书院',
     motivation: '让主角具备面对真相的能力',
+    roleArc: '从谜语式引导者转为公开同盟。',
     description: '以训练和谜语推动主角成长，但始终保留最危险的信息。',
     tags: ['引导者', '保留信息'],
   },
@@ -40,38 +44,41 @@ const baseEntities = [
     identity: '反派组织的执行者',
     faction: '反派组织',
     motivation: '用秩序压制混乱，以牺牲个人换取稳定',
+    roleArc: '作为主角的镜像角色，逐步暴露相似创伤下的相反选择。',
     description: '与主角拥有相似的伤口，却选择了完全相反的道路。',
     tags: ['价值观冲突', '镜像角色'],
   },
   {
     id: 'entity-order',
-    name: '反派组织',
+    name: '黑鸦会',
     type: 'organization',
     identity: '暗中控制边境的秘密结社',
-    faction: '黑檀会',
+    faction: '黑鸦会',
     motivation: '收拢旧王朝遗产，重建绝对秩序',
     description: '以档案、誓约与债务编织控制网络，是多条事件线背后的推手。',
     tags: ['组织', '幕后'],
   },
   {
     id: 'entity-place',
-    name: '关键地点',
+    name: '北门驿站',
     type: 'place',
     identity: '故乡北侧的废弃驿站',
-    faction: '无',
+    faction: '旧址',
     motivation: '承载旧案证据与最终对峙的空间记忆',
     description: '第一封信件与最终证据都指向此处，是时间线的回环点。',
     tags: ['场景', '回环'],
   },
 ] satisfies FushengProject['entities']
 
-const baseEvents = [
+const fictionEvents = [
   {
     id: 'event-letter',
     title: '神秘信件出现',
+    chapter: '序章',
     timeLabel: '序章',
     order: 1,
     location: '故乡旧宅',
+    eventType: '开端 / 伏笔',
     description: '一封没有署名的信件指出主角的身份并非表面所见。',
     relatedEntityIds: ['entity-main', 'entity-place'],
     tags: ['开端', '伏笔'],
@@ -79,9 +86,11 @@ const baseEvents = [
   {
     id: 'event-secret',
     title: '旧友第一次隐瞒真相',
-    timeLabel: '第2章',
+    chapter: '第一章',
+    timeLabel: '第一章',
     order: 2,
     location: '渡口',
+    eventType: '裂痕',
     description: '旧友认出了信件上的印记，却声称从未见过。',
     relatedEntityIds: ['entity-main', 'entity-friend'],
     tags: ['隐瞒', '裂痕'],
@@ -89,9 +98,11 @@ const baseEvents = [
   {
     id: 'event-leave',
     title: '主角离开故乡',
-    timeLabel: '第3章',
+    chapter: '第二章',
+    timeLabel: '第二章',
     order: 3,
     location: '北门古道',
+    eventType: '旅程转折',
     description: '主角带着信件离开故乡，开始追索藏书院与旧案之间的联系。',
     relatedEntityIds: ['entity-main', 'entity-mentor', 'entity-place'],
     tags: ['转折', '旅程'],
@@ -99,26 +110,30 @@ const baseEvents = [
   {
     id: 'event-reveal',
     title: '身份揭露',
-    timeLabel: '第8章',
+    chapter: '第四章',
+    timeLabel: '第四章',
     order: 4,
     location: '藏书院密阁',
-    description: '导师揭开主角身世，旧友的沉默被证明是一次保护也是一次背叛。',
+    eventType: '回收',
+    description: '导师揭开主角身世，旧友的沉默被证明是一次保护，也是一场背叛。',
     relatedEntityIds: ['entity-main', 'entity-friend', 'entity-mentor'],
     tags: ['回收', '真相'],
   },
   {
     id: 'event-final',
     title: '最终对峙',
+    chapter: '终章',
     timeLabel: '终章',
     order: 5,
-    location: '废弃驿站',
+    location: '北门驿站',
+    eventType: '高潮',
     description: '主角与宿敌在最初线索的源头相遇，完成价值观与命运选择的对照。',
     relatedEntityIds: ['entity-main', 'entity-rival', 'entity-order', 'entity-place'],
     tags: ['高潮', '对照'],
   },
 ] satisfies FushengProject['events']
 
-const baseRelations = [
+const fictionRelations = [
   {
     id: 'relation-main-friend',
     sourceId: 'entity-main',
@@ -153,7 +168,7 @@ const baseRelations = [
   },
 ] satisfies FushengProject['entityRelations']
 
-const baseEventLinks = [
+const fictionEventLinks = [
   {
     id: 'eventlink-letter-reveal',
     sourceEventId: 'event-letter',
@@ -167,7 +182,7 @@ const baseEventLinks = [
     sourceEventId: 'event-secret',
     targetEventId: 'event-reveal',
     type: '导致',
-    description: '旧友的隐瞒让主角更晚知道真相，也加深了揭露时的情感冲击。',
+    description: '旧友的隐瞒让主角更晚知道真相，也加深了揭露时的情感冲突。',
     style: { lineStyle: 'solid', tone: 'cinnabar' },
   },
   {
@@ -180,7 +195,202 @@ const baseEventLinks = [
   },
 ] satisfies FushengProject['eventLinks']
 
-const entityNodePositions = {
+const historyEntities = [
+  {
+    id: 'entity-liubang',
+    name: '刘邦',
+    type: 'person',
+    identity: '汉王，后为汉高祖',
+    dynasty: '秦末汉初',
+    birth: '前256年',
+    death: '前195年',
+    faction: '汉军',
+    motivation: '联合诸侯入关，最终建立新的政治秩序。',
+    description: '沛县起兵后逐步扩大势力，在楚汉战争中由弱转强。',
+    tags: ['汉军', '开国君主'],
+  },
+  {
+    id: 'entity-xiangyu',
+    name: '项羽',
+    type: 'person',
+    identity: '西楚霸王',
+    dynasty: '秦末汉初',
+    birth: '前232年',
+    death: '前202年',
+    faction: '楚军',
+    motivation: '推翻秦制并以诸侯分封重构天下秩序。',
+    description: '以巨鹿之战成名，后与刘邦展开长期争衡。',
+    tags: ['楚军', '霸王'],
+  },
+  {
+    id: 'entity-zhangliang',
+    name: '张良',
+    type: 'person',
+    identity: '谋臣',
+    dynasty: '秦末汉初',
+    faction: '汉军',
+    motivation: '辅佐刘邦取天下，并规避军事与政治风险。',
+    description: '在鸿门宴与入关策略中多次发挥关键作用。',
+    tags: ['谋臣', '韩国旧族'],
+  },
+  {
+    id: 'entity-hanxin',
+    name: '韩信',
+    type: 'person',
+    identity: '大将',
+    dynasty: '秦末汉初',
+    death: '前196年',
+    faction: '汉军',
+    motivation: '以军事功业换取地位与封赏。',
+    description: '受萧何举荐后成为汉军主将，改变楚汉战争走向。',
+    tags: ['将领', '兵仙'],
+  },
+  {
+    id: 'entity-fanzeng',
+    name: '范增',
+    type: 'person',
+    identity: '亚父',
+    dynasty: '秦末汉初',
+    death: '前204年',
+    faction: '楚军',
+    motivation: '维护楚军战略主动，主张尽早剪除刘邦。',
+    description: '多次提醒项羽警惕刘邦，但其建议未被充分采纳。',
+    tags: ['谋士', '楚军'],
+  },
+  {
+    id: 'entity-guanzhong',
+    name: '关中',
+    type: 'place',
+    identity: '秦都核心区域',
+    dynasty: '秦末汉初',
+    faction: '战略地域',
+    motivation: '掌握关中意味着掌握人口、粮赋和政治合法性。',
+    description: '楚汉争衡的关键空间，也是入关约定与分封争议的焦点。',
+    tags: ['地缘', '战略'],
+  },
+] satisfies FushengProject['entities']
+
+const historyEvents = [
+  {
+    id: 'event-julu',
+    title: '巨鹿之战',
+    timeLabel: '前207年',
+    order: 1,
+    location: '巨鹿',
+    eventType: '战役',
+    description: '项羽破釜沉舟，大败秦军主力，楚军声望急剧上升。',
+    relatedEntityIds: ['entity-xiangyu', 'entity-fanzeng'],
+    tags: ['战役', '反秦'],
+  },
+  {
+    id: 'event-enter-guan',
+    title: '刘邦先入关中',
+    timeLabel: '前206年',
+    order: 2,
+    location: '关中',
+    eventType: '政治转折',
+    description: '刘邦率先进入关中，并以约法三章争取秦地民心。',
+    relatedEntityIds: ['entity-liubang', 'entity-zhangliang', 'entity-guanzhong'],
+    tags: ['入关', '民心'],
+  },
+  {
+    id: 'event-hongmen',
+    title: '鸿门宴',
+    timeLabel: '前206年',
+    order: 3,
+    location: '鸿门',
+    eventType: '会盟 / 危机',
+    description: '项羽设宴震慑刘邦，范增主张除患，张良与樊哙等人助刘邦脱险。',
+    relatedEntityIds: ['entity-liubang', 'entity-xiangyu', 'entity-zhangliang', 'entity-fanzeng'],
+    tags: ['危机', '政治博弈'],
+  },
+  {
+    id: 'event-hanxin-general',
+    title: '韩信拜将',
+    timeLabel: '前206年后',
+    order: 4,
+    location: '汉中',
+    eventType: '军事任命',
+    description: '韩信被拜为大将，汉军获得更成熟的战略执行能力。',
+    relatedEntityIds: ['entity-liubang', 'entity-hanxin'],
+    tags: ['将领', '转折'],
+  },
+  {
+    id: 'event-gaixia',
+    title: '垓下之围',
+    timeLabel: '前202年',
+    order: 5,
+    location: '垓下',
+    eventType: '决战',
+    description: '汉军合围楚军，项羽败亡，楚汉战争走向终局。',
+    relatedEntityIds: ['entity-liubang', 'entity-xiangyu', 'entity-hanxin'],
+    tags: ['决战', '终局'],
+  },
+] satisfies FushengProject['events']
+
+const historyRelations = [
+  {
+    id: 'relation-liubang-zhangliang',
+    sourceId: 'entity-liubang',
+    targetId: 'entity-zhangliang',
+    type: '君臣 / 谋略辅佐',
+    description: '张良在战略判断和危机处置中多次辅佐刘邦。',
+    style: { lineStyle: 'solid', tone: 'goldline' },
+  },
+  {
+    id: 'relation-liubang-hanxin',
+    sourceId: 'entity-liubang',
+    targetId: 'entity-hanxin',
+    type: '君臣 / 军事协作',
+    description: '刘邦重用韩信后，汉军军事能力明显提升。',
+    style: { lineStyle: 'solid', tone: 'jade', animated: true },
+  },
+  {
+    id: 'relation-liubang-xiangyu',
+    sourceId: 'entity-liubang',
+    targetId: 'entity-xiangyu',
+    type: '对立',
+    description: '从反秦盟友转向争夺天下的主要对手。',
+    style: { lineStyle: 'dashed', tone: 'cinnabar', animated: true },
+  },
+  {
+    id: 'relation-xiangyu-fanzeng',
+    sourceId: 'entity-xiangyu',
+    targetId: 'entity-fanzeng',
+    type: '主从 / 谋臣',
+    description: '范增为项羽重要谋士，但核心建议常未被采纳。',
+    style: { lineStyle: 'dotted', tone: 'ink' },
+  },
+] satisfies FushengProject['entityRelations']
+
+const historyEventLinks = [
+  {
+    id: 'eventlink-julu-enter',
+    sourceEventId: 'event-julu',
+    targetEventId: 'event-enter-guan',
+    type: '背景',
+    description: '巨鹿之战削弱秦军主力，为诸侯入关创造局面。',
+    style: { lineStyle: 'solid', tone: 'ink' },
+  },
+  {
+    id: 'eventlink-enter-hongmen',
+    sourceEventId: 'event-enter-guan',
+    targetEventId: 'event-hongmen',
+    type: '导致',
+    description: '刘邦先入关中触发项羽阵营疑惧，成为鸿门宴危机前提。',
+    style: { lineStyle: 'solid', tone: 'cinnabar', animated: true },
+  },
+  {
+    id: 'eventlink-hanxin-gaixia',
+    sourceEventId: 'event-hanxin-general',
+    targetEventId: 'event-gaixia',
+    type: '奠定基础',
+    description: '韩信的军事行动与合围策略为垓下终局奠定条件。',
+    style: { lineStyle: 'solid', tone: 'jade', animated: true },
+  },
+] satisfies FushengProject['eventLinks']
+
+const fictionNodePositions = {
   'entity-main': { x: 40, y: 135 },
   'entity-friend': { x: 350, y: 45 },
   'entity-mentor': { x: 345, y: 305 },
@@ -189,7 +399,7 @@ const entityNodePositions = {
   'entity-place': { x: 720, y: 340 },
 } satisfies FushengProject['entityNodePositions']
 
-const eventNodePositions = {
+const fictionEventNodePositions = {
   'event-letter': { x: 30, y: 165 },
   'event-secret': { x: 335, y: 55 },
   'event-leave': { x: 335, y: 315 },
@@ -197,7 +407,24 @@ const eventNodePositions = {
   'event-final': { x: 1010, y: 170 },
 } satisfies FushengProject['eventNodePositions']
 
-const baseLibraryItems = [
+const historyNodePositions = {
+  'entity-liubang': { x: 40, y: 150 },
+  'entity-xiangyu': { x: 690, y: 150 },
+  'entity-zhangliang': { x: 345, y: 40 },
+  'entity-hanxin': { x: 355, y: 300 },
+  'entity-fanzeng': { x: 1010, y: 110 },
+  'entity-guanzhong': { x: 680, y: 350 },
+} satisfies FushengProject['entityNodePositions']
+
+const historyEventNodePositions = {
+  'event-julu': { x: 30, y: 165 },
+  'event-enter-guan': { x: 335, y: 65 },
+  'event-hongmen': { x: 660, y: 160 },
+  'event-hanxin-general': { x: 335, y: 320 },
+  'event-gaixia': { x: 1000, y: 170 },
+} satisfies FushengProject['eventNodePositions']
+
+const fictionLibraryItems = [
   {
     id: 'library-origin',
     title: '主题札记：身份与选择',
@@ -216,40 +443,107 @@ const baseLibraryItems = [
   },
 ] satisfies FushengProject['libraryItems']
 
-export const createSampleProject = (
+const historyLibraryItems = [
+  {
+    id: 'library-shiji',
+    title: '史料摘录：鸿门宴',
+    kind: 'source',
+    content: '《史记·项羽本纪》与《高祖本纪》可互相比照鸿门宴前后的叙事重点。',
+    tags: ['史记', '鸿门宴'],
+    createdAt: now(),
+  },
+  {
+    id: 'library-note',
+    title: '考据札记：关中归属',
+    kind: 'note',
+    content: '关中控制权不仅是军事问题，也关系到秦地民心、分封承诺和政治合法性。',
+    tags: ['关中', '政治地理'],
+    createdAt: now(),
+  },
+] satisfies FushengProject['libraryItems']
+
+const cloneProjectParts = <T extends { tags?: string[] }>(items: T[]) =>
+  items.map((item) => ({ ...item, tags: item.tags ? [...item.tags] : [] })) as T[]
+
+export const createFictionSampleProject = (
   id = 'project-fushenglu-demo',
   title = '浮生录示例案卷',
   category: ProjectCategory = 'novel',
   subtitle = '用一条身份谜团线串起人物、事件、关系与伏笔回收。',
 ): FushengProject => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id,
   title,
   subtitle,
+  templateId: 'fiction',
   category,
   updatedAt: now(),
-  entities: baseEntities.map((item) => ({ ...item, tags: [...item.tags] })),
-  events: baseEvents.map((item) => ({
+  entities: cloneProjectParts(fictionEntities),
+  events: fictionEvents.map((item) => ({
     ...item,
     relatedEntityIds: [...item.relatedEntityIds],
     tags: [...item.tags],
   })),
-  entityRelations: baseRelations.map((item) => ({ ...item })),
-  eventLinks: baseEventLinks.map((item) => ({ ...item })),
-  libraryItems: baseLibraryItems.map((item) => ({ ...item, tags: [...item.tags] })),
-  entityNodePositions: { ...entityNodePositions },
-  eventNodePositions: { ...eventNodePositions },
+  entityRelations: fictionRelations.map((item) => ({ ...item, style: { ...item.style } })),
+  eventLinks: fictionEventLinks.map((item) => ({ ...item, style: { ...item.style } })),
+  libraryItems: fictionLibraryItems.map((item) => ({ ...item, tags: [...item.tags] })),
+  entityNodePositions: { ...fictionNodePositions },
+  eventNodePositions: { ...fictionEventNodePositions },
 })
 
+export const createHistorySampleProject = (
+  id = 'project-chuhan',
+  title = '楚汉旧闻',
+  category: ProjectCategory = 'history',
+  subtitle = '以秦末楚汉为背景，整理人物联盟、战役节点与政治转折。',
+): FushengProject => ({
+  schemaVersion: 3,
+  id,
+  title,
+  subtitle,
+  templateId: 'history',
+  category,
+  updatedAt: now(),
+  entities: cloneProjectParts(historyEntities),
+  events: historyEvents.map((item) => ({
+    ...item,
+    relatedEntityIds: [...item.relatedEntityIds],
+    tags: [...item.tags],
+  })),
+  entityRelations: historyRelations.map((item) => ({ ...item, style: { ...item.style } })),
+  eventLinks: historyEventLinks.map((item) => ({ ...item, style: { ...item.style } })),
+  libraryItems: historyLibraryItems.map((item) => ({ ...item, tags: [...item.tags] })),
+  entityNodePositions: { ...historyNodePositions },
+  eventNodePositions: { ...historyEventNodePositions },
+})
+
+export const createSampleProject = (
+  id = 'project-fushenglu-demo',
+  title = '浮生录示例案卷',
+  category: ProjectCategory = 'novel',
+  subtitle = '用一条身份谜团线串起人物、事件、关系与伏笔回收。',
+  templateId?: ProjectTemplateId,
+): FushengProject => {
+  const resolvedTemplateId = inferTemplateId(templateId, category)
+  return resolvedTemplateId === 'history'
+    ? createHistorySampleProject(id, title, category, subtitle)
+    : createFictionSampleProject(id, title, category, subtitle)
+}
+
+export const createProjectFromTemplate = (
+  templateId: ProjectTemplateId,
+  id: string,
+  title: string,
+  subtitle: string,
+): FushengProject =>
+  templateId === 'history'
+    ? createHistorySampleProject(id, title, 'history', subtitle)
+    : createFictionSampleProject(id, title, 'novel', subtitle)
+
 export const sampleProjects: FushengProject[] = [
-  createSampleProject(),
-  createSampleProject(
-    'project-chuhan',
-    '楚汉旧闻',
-    'history',
-    '以秦末楚汉为背景，整理人物联盟、战役节点与政治转折。',
-  ),
-  createSampleProject(
+  createFictionSampleProject(),
+  createHistorySampleProject(),
+  createFictionSampleProject(
     'project-starshore',
     '星海边境设定',
     'worldbuilding',

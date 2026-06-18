@@ -12,13 +12,14 @@ const entityTypeLabel: Record<Entity['type'], string> = {
 
 type Props = {
   entity: Entity
+  typeLabel?: string
   selected?: boolean
   onSelect: () => void
   onEdit: () => void
   onDelete: () => void
 }
 
-export default function EntityCard({ entity, selected, onSelect, onEdit, onDelete }: Props) {
+export default function EntityCard({ entity, typeLabel, selected, onSelect, onEdit, onDelete }: Props) {
   return (
     <article
       className={[
@@ -29,7 +30,7 @@ export default function EntityCard({ entity, selected, onSelect, onEdit, onDelet
       <button type="button" onClick={onSelect} className="block w-full text-left">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs text-ink-500">{entityTypeLabel[entity.type]}</p>
+            <p className="text-xs text-ink-500">{typeLabel || entityTypeLabel[entity.type]}</p>
             <h3 className="mt-1 font-serif text-xl font-semibold text-ink-900">{entity.name}</h3>
           </div>
           <AvatarBadge entity={entity} />

@@ -5,6 +5,7 @@ import EditorModal from '../components/EditorModal'
 import EventCard from '../components/EventCard'
 import { useProject } from '../hooks/useProject'
 import { useFushengluStore } from '../store/useFushengluStore'
+import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection, StoryEvent, StoryEventDraft } from '../types'
 
 const parseTags = (value: string) =>
@@ -16,8 +17,10 @@ const parseTags = (value: string) =>
 const emptyEvent = (order: number): StoryEventDraft => ({
   title: '',
   timeLabel: '',
+  chapter: '',
   order,
   location: '',
+  eventType: '',
   description: '',
   relatedEntityIds: [],
   tags: [],
@@ -26,17 +29,18 @@ const emptyEvent = (order: number): StoryEventDraft => ({
 const toDraft = (event: StoryEvent): StoryEventDraft => ({
   title: event.title,
   timeLabel: event.timeLabel,
+  chapter: event.chapter || '',
   order: event.order,
   location: event.location || '',
+  eventType: event.eventType || '',
   description: event.description || '',
   relatedEntityIds: event.relatedEntityIds,
   tags: event.tags,
 })
 
-const linkTypes = ['导致', '影响', '转折', '伏笔', '回收', '对照', '背景']
-
 export default function EventsPage() {
   const project = useProject()
+  const template = getProjectTemplate(project.templateId, project.category)
   const addEvent = useFushengluStore((state) => state.addEvent)
   const updateEvent = useFushengluStore((state) => state.updateEvent)
   const deleteEvent = useFushengluStore((state) => state.deleteEvent)
@@ -49,16 +53,20 @@ export default function EventsPage() {
   )
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [draft, setDraft] = useState<StoryEventDraft>(() => emptyEvent(nextOrder))
+  const [draft, setDraft] = useState<StoryEventDraft>(() => ({
+    ...emptyEvent(nextOrder),
+    tags: template.defaultEventTags,
+    eventType: template.defaultEventTags[0] || '',
+  }))
   const [tagText, setTagText] = useState('')
   const initialLink = useMemo(
     () => ({
       sourceEventId: project.events[0]?.id || '',
       targetEventId: project.events[1]?.id || '',
-      type: '导致',
+      type: template.eventLinkTypes[0] || '',
       description: '',
     }),
-    [project.events],
+    [project.events, template.eventLinkTypes],
   )
   const [linkDraft, setLinkDraft] = useState(initialLink)
 
@@ -71,8 +79,8 @@ export default function EventsPage() {
 
   const openCreate = () => {
     setEditingId(null)
-    setDraft(emptyEvent(nextOrder))
-    setTagText('')
+    setDraft({ ...emptyEvent(nextOrder), tags: template.defaultEventTags })
+    setTagText(template.defaultEventTags.join('，'))
     setModalOpen(true)
   }
 
@@ -88,6 +96,8 @@ export default function EventsPage() {
       ...draft,
       title: draft.title.trim(),
       timeLabel: draft.timeLabel.trim(),
+      chapter: draft.chapter?.trim(),
+      eventType: draft.eventType?.trim(),
       order: Number(draft.order) || nextOrder,
       tags: parseTags(tagText),
     }
@@ -127,10 +137,10 @@ export default function EventsPage() {
         <div className="rounded-lg border border-ink-900/10 bg-paper-50 p-6 shadow-soft">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm text-ink-500">Events</p>
-              <h2 className="mt-1 font-serif text-3xl font-semibold">事件簿</h2>
+              <p className="text-sm text-ink-500">{template.pages.events.eyebrow}</p>
+              <h2 className="mt-1 font-serif text-3xl font-semibold">{template.pages.events.title}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-ink-700">
-                管理历史事件、章节情节、伏笔节点与回收节点。事件连接会在因果图中呈现。
+                {template.pages.events.description}
               </p>
             </div>
             <button
@@ -139,13 +149,13 @@ export default function EventsPage() {
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-ink-900 px-5 text-paper-50 shadow-soft transition hover:bg-ink-700"
             >
               <Plus size={18} />
-              新增事件
+              {template.pages.events.addLabel}
             </button>
           </div>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="搜索标题、时间标签、地点或标签"
+            placeholder={template.pages.events.search}
             className="mt-6 min-h-11 w-full rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm outline-none focus:border-goldline"
           />
         </div>
@@ -212,7 +222,7 @@ export default function EventsPage() {
               onChange={(event) => setLinkDraft((value) => ({ ...value, type: event.target.value }))}
               className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm outline-none"
             >
-              {linkTypes.map((type) => (
+              {template.eventLinkTypes.map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>
@@ -263,14 +273,14 @@ export default function EventsPage() {
 
       <EditorModal
         open={modalOpen}
-        title={editingId ? '编辑事件' : '新增事件'}
-        submitLabel={editingId ? '保存修改' : '创建事件'}
+        title={editingId ? `编辑${template.eventSingular}` : `新增${template.eventSingular}`}
+        submitLabel={editingId ? '保存修改' : `创建${template.eventSingular}`}
         onClose={() => setModalOpen(false)}
         onSubmit={saveEvent}
       >
         <div className="grid gap-4 md:grid-cols-2">
           <label className="grid gap-2 text-sm">
-            事件标题
+            {template.eventFields.find((field) => field.key === 'title')?.label || '事件标题'}
             <input
               value={draft.title}
               onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))}
@@ -278,16 +288,32 @@ export default function EventsPage() {
             />
           </label>
           <label className="grid gap-2 text-sm">
-            时间标签
+            {template.eventFields.find((field) => field.key === 'timeLabel')?.label || '时间标签'}
             <input
               value={draft.timeLabel}
               onChange={(event) =>
                 setDraft((value) => ({ ...value, timeLabel: event.target.value }))
               }
               className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
-              placeholder="前207年 / 第6章 / 第一幕"
+              placeholder={
+                template.eventFields.find((field) => field.key === 'timeLabel')?.placeholder ||
+                '前207年 / 第6章 / 第一幕'
+              }
             />
           </label>
+          {template.eventFields.some((field) => field.key === 'chapter') ? (
+            <label className="grid gap-2 text-sm">
+              章节 / 幕次
+              <input
+                value={draft.chapter}
+                onChange={(event) =>
+                  setDraft((value) => ({ ...value, chapter: event.target.value }))
+                }
+                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+                placeholder="第一章 / 第二幕"
+              />
+            </label>
+          ) : null}
           <label className="grid gap-2 text-sm">
             顺序
             <input
@@ -309,6 +335,21 @@ export default function EventsPage() {
               className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
             />
           </label>
+          {template.eventFields.some((field) => field.key === 'eventType') ? (
+            <label className="grid gap-2 text-sm">
+              {template.id === 'history' ? '事件类型' : '情节类型'}
+              <input
+                value={draft.eventType}
+                onChange={(event) =>
+                  setDraft((value) => ({ ...value, eventType: event.target.value }))
+                }
+                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+                placeholder={
+                  template.eventFields.find((field) => field.key === 'eventType')?.placeholder
+                }
+              />
+            </label>
+          ) : null}
           <label className="grid gap-2 text-sm md:col-span-2">
             事件描述
             <textarea
@@ -320,7 +361,7 @@ export default function EventsPage() {
             />
           </label>
           <div className="grid gap-2 text-sm md:col-span-2">
-            相关人物 / 角色
+            相关{template.entityPlural}
             <div className="grid gap-2 rounded-lg border border-ink-900/10 bg-paper-100/65 p-3 sm:grid-cols-2">
               {project.entities.map((entity) => (
                 <label key={entity.id} className="flex items-center gap-2 text-sm text-ink-700">

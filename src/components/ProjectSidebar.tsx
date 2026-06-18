@@ -1,47 +1,28 @@
-import {
-  Archive,
-  BookOpen,
-  FolderOpen,
-  GitBranch,
-  LayoutDashboard,
-  Network,
-  PanelLeftClose,
-  PanelLeftOpen,
-  ScrollText,
-  Settings,
-  UsersRound,
-} from 'lucide-react'
+import { BookOpen, FolderOpen, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import clsx from 'clsx'
 import { Link, NavLink } from 'react-router-dom'
 import { useFushengluStore } from '../store/useFushengluStore'
-
-const navItems = [
-  { to: 'dashboard', label: '总览', icon: LayoutDashboard },
-  { to: 'entities', label: '人物志', icon: UsersRound },
-  { to: 'events', label: '事件簿', icon: ScrollText },
-  { to: 'timeline', label: '流年轴', icon: GitBranch },
-  { to: 'relation-graph', label: '群像图', icon: Network },
-  { to: 'event-graph', label: '因果图', icon: GitBranch },
-  { to: 'library', label: '藏卷', icon: Archive },
-  { to: 'settings', label: '设置', icon: Settings },
-]
+import { getProjectTemplate, templateNavItems } from '../templates/projectTemplates'
+import type { ProjectTemplateId } from '../types'
 
 type Props = {
   projectId: string
+  templateId: ProjectTemplateId
 }
 
-export default function ProjectSidebar({ projectId }: Props) {
+export default function ProjectSidebar({ projectId, templateId }: Props) {
   const collapsed = useFushengluStore((state) => state.sidebarCollapsed)
   const toggleSidebar = useFushengluStore((state) => state.toggleSidebar)
+  const template = getProjectTemplate(templateId)
 
   return (
     <aside
       className={clsx(
-        'border-b border-ink-900/10 bg-[rgb(37_33_27)] text-[rgb(247_240_223)] transition-[width] duration-300 dark:bg-[rgb(14_13_11)] lg:sticky lg:top-0 lg:h-dvh lg:border-b-0 lg:border-r',
-        collapsed ? 'lg:w-[5.5rem]' : 'lg:w-64',
+        'ink-sidebar border-b border-[rgba(247,240,223,.14)] text-[rgb(247_240_223)] transition-[width] duration-300 lg:sticky lg:top-0 lg:h-dvh lg:border-b-0 lg:border-r',
+        collapsed ? 'lg:w-[5.5rem]' : 'lg:w-72',
       )}
     >
-      <div className="flex h-full flex-col">
+      <div className="relative z-10 flex h-full flex-col">
         <div
           className={clsx(
             'flex items-center justify-between gap-4 px-4 py-4 lg:px-5 lg:py-6',
@@ -56,7 +37,7 @@ export default function ProjectSidebar({ projectId }: Props) {
             )}
             title="浮生录"
           >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[rgba(247,240,223,.28)] bg-[rgba(247,240,223,.08)] shadow-soft">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[rgba(247,240,223,.24)] bg-[rgba(247,240,223,.08)] shadow-soft">
               <img
                 src="/fushenglu-logo.png"
                 alt="浮生录"
@@ -67,6 +48,14 @@ export default function ProjectSidebar({ projectId }: Props) {
             </span>
             <span className={clsx('whitespace-nowrap', collapsed && 'lg:hidden')}>浮生录</span>
           </Link>
+          <p
+            className={clsx(
+              'mt-3 text-xs leading-5 text-[rgba(247,240,223,.58)]',
+              collapsed && 'lg:hidden',
+            )}
+          >
+            {template.name} · 档案管理工作台
+          </p>
           <div className={clsx('flex items-center gap-2', collapsed ? 'lg:flex-col' : 'lg:mt-5')}>
             <Link
               to="/projects"
@@ -98,8 +87,10 @@ export default function ProjectSidebar({ projectId }: Props) {
             collapsed && 'lg:items-center',
           )}
         >
-          {navItems.map((item) => {
+          {templateNavItems.map((item) => {
             const Icon = item.icon
+            const label = template.nav[item.key]
+
             return (
               <NavLink
                 key={item.to}
@@ -113,13 +104,11 @@ export default function ProjectSidebar({ projectId }: Props) {
                       : 'text-[rgba(247,240,223,.72)] hover:bg-[rgba(247,240,223,.10)] hover:text-[rgb(255,253,246)]',
                   )
                 }
-                title={item.label}
-                aria-label={item.label}
+                title={label}
+                aria-label={label}
               >
                 <Icon size={18} />
-                <span className={clsx('whitespace-nowrap', collapsed && 'lg:hidden')}>
-                  {item.label}
-                </span>
+                <span className={clsx('whitespace-nowrap', collapsed && 'lg:hidden')}>{label}</span>
               </NavLink>
             )
           })}
@@ -131,7 +120,11 @@ export default function ProjectSidebar({ projectId }: Props) {
               )}
               title="案卷工作台"
             >
-              {collapsed ? <BookOpen size={17} /> : '案卷工作台会自动保存布局、节点与线索。'}
+              {collapsed ? (
+                <BookOpen size={17} />
+              ) : (
+                `${template.shortName}会自动保存布局、节点与线索，便于持续整理。`
+              )}
             </div>
           </div>
         </nav>

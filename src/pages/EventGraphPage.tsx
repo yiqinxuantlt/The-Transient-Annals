@@ -5,12 +5,12 @@ import EdgeStyleControls from '../components/EdgeStyleControls'
 import GraphCanvas from '../components/GraphCanvas'
 import { useProject } from '../hooks/useProject'
 import { useFushengluStore } from '../store/useFushengluStore'
+import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection, EventLinkDraft } from '../types'
-
-const linkTypes = ['导致', '影响', '转折', '伏笔', '回收', '对照', '背景']
 
 export default function EventGraphPage() {
   const project = useProject()
+  const template = getProjectTemplate(project.templateId, project.category)
   const addEventLink = useFushengluStore((state) => state.addEventLink)
   const updateEventLinkStyle = useFushengluStore((state) => state.updateEventLinkStyle)
   const deleteEventLink = useFushengluStore((state) => state.deleteEventLink)
@@ -22,11 +22,11 @@ export default function EventGraphPage() {
     () => ({
       sourceEventId: project.events[0]?.id || '',
       targetEventId: project.events[1]?.id || '',
-      type: '导致',
+      type: template.eventLinkTypes[0] || '',
       description: '',
       style: { lineStyle: 'solid', tone: 'jade', animated: false },
     }),
-    [project.events],
+    [project.events, template.eventLinkTypes],
   )
   const [draft, setDraft] = useState(initialLink)
   const [composerOpen, setComposerOpen] = useState(false)
@@ -59,10 +59,10 @@ export default function EventGraphPage() {
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <section className="relative min-h-[calc(100dvh-9rem)] rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
         <div className="mb-5">
-          <p className="text-sm text-ink-500">Causality Map</p>
-          <h2 className="mt-1 font-serif text-3xl font-semibold">因果图</h2>
+          <p className="text-sm text-ink-500">{template.pages.eventGraph.eyebrow}</p>
+          <h2 className="mt-1 font-serif text-3xl font-semibold">{template.pages.eventGraph.title}</h2>
           <p className="mt-2 text-sm text-ink-700">
-            事件节点可拖拽；从节点侧边圆点拖到另一个节点，可直接记录导致、伏笔、回收或转折。
+            {template.pages.eventGraph.description}
           </p>
         </div>
 
@@ -71,7 +71,7 @@ export default function EventGraphPage() {
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs text-ink-500">Canvas Composer</p>
-                <h3 className="font-serif text-xl font-semibold">新增事件连接</h3>
+                <h3 className="font-serif text-xl font-semibold">{template.pages.eventGraph.composerTitle}</h3>
               </div>
               <button
                 type="button"
@@ -114,7 +114,7 @@ export default function EventGraphPage() {
                 onChange={(event) => setDraft((value) => ({ ...value, type: event.target.value }))}
                 className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm outline-none"
               >
-                {linkTypes.map((type) => (
+                {template.eventLinkTypes.map((type) => (
                   <option key={type} value={type}>
                     {type}
                   </option>
@@ -185,7 +185,7 @@ export default function EventGraphPage() {
           </section>
         ) : null}
         <section className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
-          <h3 className="font-serif text-xl font-semibold">因果线索</h3>
+          <h3 className="font-serif text-xl font-semibold">{template.pages.eventGraph.notesTitle}</h3>
           <div className="mt-4 space-y-3">
             {project.eventLinks.map((link) => (
               <div key={link.id} className="rounded-lg border border-ink-900/10 bg-paper-100/65 p-3 text-sm">

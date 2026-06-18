@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useProject } from '../hooks/useProject'
 import { useFushengluStore } from '../store/useFushengluStore'
+import { getProjectTemplate } from '../templates/projectTemplates'
 import type { ProjectCategory } from '../types'
 
 const categoryLabel: Record<ProjectCategory, string> = {
@@ -14,6 +15,7 @@ const categoryLabel: Record<ProjectCategory, string> = {
 
 export default function ProjectSettingsPage() {
   const project = useProject()
+  const template = getProjectTemplate(project.templateId, project.category)
   const updateProjectMeta = useFushengluStore((state) => state.updateProjectMeta)
   const replaceProjectData = useFushengluStore((state) => state.replaceProjectData)
   const restoreSampleData = useFushengluStore((state) => state.restoreSampleData)
@@ -75,6 +77,14 @@ export default function ProjectSettingsPage() {
               />
             </label>
             <label className="grid gap-2 text-sm">
+              项目模板
+              <input
+                value={template.name}
+                readOnly
+                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-100/65 px-3 text-ink-600 outline-none"
+              />
+            </label>
+            <label className="grid gap-2 text-sm">
               类型
               <select
                 value={category}
@@ -100,7 +110,7 @@ export default function ProjectSettingsPage() {
           <button
             type="button"
             onClick={() => {
-              updateProjectMeta(project.id, { title, subtitle, category })
+              updateProjectMeta(project.id, { title, subtitle, category, templateId: project.templateId })
               setMessage('基础信息已保存。')
             }}
             className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-ink-900 px-5 text-sm text-paper-50 transition hover:bg-ink-700"

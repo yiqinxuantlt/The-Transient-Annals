@@ -2,6 +2,7 @@ export type EntityType = 'person' | 'character' | 'organization' | 'place' | 'ot
 export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted'
 export type EdgeTone = 'cinnabar' | 'jade' | 'goldline' | 'ink'
 export type BackendStatus = 'checking' | 'online' | 'offline'
+export type ProjectTemplateId = 'history' | 'fiction'
 
 export type GraphNodePosition = {
   x: number
@@ -21,6 +22,10 @@ export type Entity = {
   identity?: string
   faction?: string
   motivation?: string
+  birth?: string
+  death?: string
+  dynasty?: string
+  roleArc?: string
   description?: string
   avatarUrl?: string
   tags: string[]
@@ -31,6 +36,8 @@ export type StoryEvent = {
   title: string
   timeLabel: string
   order: number
+  chapter?: string
+  eventType?: string
   location?: string
   description?: string
   relatedEntityIds: string[]
@@ -74,6 +81,7 @@ export type FushengProject = {
   id: string
   title: string
   subtitle: string
+  templateId: ProjectTemplateId
   category: ProjectCategory
   updatedAt: string
   entities: Entity[]

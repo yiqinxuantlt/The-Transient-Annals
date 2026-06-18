@@ -5,10 +5,12 @@ import EdgeStyleControls from '../components/EdgeStyleControls'
 import GraphCanvas from '../components/GraphCanvas'
 import { useProject } from '../hooks/useProject'
 import { useFushengluStore } from '../store/useFushengluStore'
+import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection, EntityRelationDraft } from '../types'
 
 export default function RelationGraphPage() {
   const project = useProject()
+  const template = getProjectTemplate(project.templateId, project.category)
   const addRelation = useFushengluStore((state) => state.addEntityRelation)
   const updateRelationStyle = useFushengluStore((state) => state.updateEntityRelationStyle)
   const deleteRelation = useFushengluStore((state) => state.deleteEntityRelation)
@@ -20,11 +22,11 @@ export default function RelationGraphPage() {
     () => ({
       sourceId: project.entities[0]?.id || '',
       targetId: project.entities[1]?.id || '',
-      type: '',
+      type: template.relationTypes[0] || '',
       description: '',
       style: { lineStyle: 'solid', tone: 'cinnabar', animated: false },
     }),
-    [project.entities],
+    [project.entities, template.relationTypes],
   )
   const [draft, setDraft] = useState(initialRelation)
   const [composerOpen, setComposerOpen] = useState(false)
@@ -55,10 +57,10 @@ export default function RelationGraphPage() {
       <section className="relative min-h-[calc(100dvh-9rem)] rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm text-ink-500">Relation Map</p>
-            <h2 className="mt-1 font-serif text-3xl font-semibold">群像图</h2>
+            <p className="text-sm text-ink-500">{template.pages.relationGraph.eyebrow}</p>
+            <h2 className="mt-1 font-serif text-3xl font-semibold">{template.pages.relationGraph.title}</h2>
             <p className="mt-2 text-sm text-ink-700">
-              点击节点查看档案，点击连线查看说明；从节点侧边圆点拖向另一个节点，可直接建立关系。
+              {template.pages.relationGraph.description}
             </p>
           </div>
         </div>
@@ -68,7 +70,7 @@ export default function RelationGraphPage() {
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs text-ink-500">Canvas Composer</p>
-                <h3 className="font-serif text-xl font-semibold">新增人物关系</h3>
+                <h3 className="font-serif text-xl font-semibold">{template.pages.relationGraph.composerTitle}</h3>
               </div>
               <button
                 type="button"
@@ -102,12 +104,17 @@ export default function RelationGraphPage() {
                   </option>
                 ))}
               </select>
-              <input
+              <select
                 value={draft.type}
                 onChange={(event) => setDraft((value) => ({ ...value, type: event.target.value }))}
-                placeholder="关系类型，例如：信任 / 隐瞒"
                 className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm outline-none"
-              />
+              >
+                {template.relationTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
               <textarea
                 value={draft.description}
                 onChange={(event) => setDraft((value) => ({ ...value, description: event.target.value }))}
@@ -173,7 +180,7 @@ export default function RelationGraphPage() {
           </section>
         ) : null}
         <section className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
-          <h3 className="font-serif text-xl font-semibold">关系札记</h3>
+          <h3 className="font-serif text-xl font-semibold">{template.pages.relationGraph.notesTitle}</h3>
           <div className="mt-4 space-y-3">
             {project.entityRelations.map((relation) => (
               <div key={relation.id} className="rounded-lg border border-ink-900/10 bg-paper-100/65 p-3 text-sm">

@@ -6,6 +6,7 @@ import RootLayout from '../layouts/RootLayout'
 
 const HomePage = lazy(() => import('../pages/HomePage'))
 const ProjectsPage = lazy(() => import('../pages/ProjectsPage'))
+const TemplateSelectPage = lazy(() => import('../pages/TemplateSelectPage'))
 const ProjectDashboard = lazy(() => import('../pages/ProjectDashboard'))
 const EntitiesPage = lazy(() => import('../pages/EntitiesPage'))
 const EventsPage = lazy(() => import('../pages/EventsPage'))
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: page(<HomePage />) },
       { path: 'projects', element: page(<ProjectsPage />) },
+      { path: 'projects/new', element: page(<TemplateSelectPage />) },
     ],
   },
   {

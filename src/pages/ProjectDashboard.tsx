@@ -4,19 +4,21 @@ import DetailPanel from '../components/DetailPanel'
 import EventTimeline from '../components/EventTimeline'
 import GraphCanvas from '../components/GraphCanvas'
 import { useProject } from '../hooks/useProject'
+import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection } from '../types'
 
 export default function ProjectDashboard() {
   const project = useProject()
+  const template = getProjectTemplate(project.templateId, project.category)
   const [selection, setSelection] = useState<DetailSelection>(
     project.entities[0] ? { kind: 'entity', id: project.entities[0].id } : null,
   )
 
   const stats = [
-    { label: '人物 / 角色', value: project.entities.length, icon: UsersRound },
-    { label: '事件节点', value: project.events.length, icon: ScrollText },
-    { label: '人物关系', value: project.entityRelations.length, icon: Network },
-    { label: '事件连接', value: project.eventLinks.length, icon: GitBranch },
+    { label: template.entityPlural, value: project.entities.length, icon: UsersRound },
+    { label: template.eventPlural, value: project.events.length, icon: ScrollText },
+    { label: template.relationLabel, value: project.entityRelations.length, icon: Network },
+    { label: template.eventLinkLabel, value: project.eventLinks.length, icon: GitBranch },
   ]
 
   return (
@@ -24,7 +26,7 @@ export default function ProjectDashboard() {
       <section className="rounded-lg border border-goldline/25 bg-paper-50 p-6 shadow-soft">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <p className="text-sm text-ink-500">Dashboard</p>
+            <p className="text-sm text-ink-500">{template.dashboard.eyebrow}</p>
             <h2 className="mt-2 font-serif text-3xl font-semibold">{project.title}</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-ink-700">{project.subtitle}</p>
           </div>
@@ -52,8 +54,10 @@ export default function ProjectDashboard() {
           <div className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-ink-500">简化群像图</p>
-                <h3 className="font-serif text-2xl font-semibold">人物与势力的关系预览</h3>
+                <p className="text-xs text-ink-500">{template.pages.relationGraph.eyebrow}</p>
+                <h3 className="font-serif text-2xl font-semibold">
+                  {template.dashboard.relationPreviewTitle}
+                </h3>
               </div>
               <Network className="text-jade" size={22} />
             </div>
@@ -63,8 +67,10 @@ export default function ProjectDashboard() {
           </div>
 
           <div className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
-            <p className="text-xs text-ink-500">关键时间线</p>
-            <h3 className="mt-1 font-serif text-2xl font-semibold">事件推进</h3>
+            <p className="text-xs text-ink-500">{template.pages.timeline.eyebrow}</p>
+            <h3 className="mt-1 font-serif text-2xl font-semibold">
+              {template.dashboard.timelinePreviewTitle}
+            </h3>
             <div className="mt-5">
               <EventTimeline
                 events={project.events.slice(0, 5)}

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { createSampleProject, sampleProjects } from '../data/sampleData'
+import { createProjectFromTemplate, createSampleProject, sampleProjects } from '../data/sampleData'
+import { inferTemplateId } from '../templates/projectTemplates'
 import {
   deleteProjectFromBackend,
   fetchProjectsFromBackend,
@@ -16,6 +17,7 @@ import type {
   GraphNodePosition,
   LibraryItem,
   ProjectCategory,
+  ProjectTemplateId,
   StoryEventDraft,
   ThemeMode,
 } from '../types'
@@ -24,6 +26,7 @@ type ProjectDraft = {
   title: string
   subtitle: string
   category: ProjectCategory
+  templateId: ProjectTemplateId
 }
 
 type StoreState = {
@@ -71,7 +74,7 @@ type StoreState = {
   clearProjectData: (projectId: string) => void
 }
 
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 
 const now = () => new Date().toISOString()
 
@@ -113,6 +116,7 @@ const normalizeStyle = (style?: EdgeVisualStyle): EdgeVisualStyle | undefined =>
 const normalizeProject = (project: FushengProject): FushengProject => ({
   ...project,
   schemaVersion: project.schemaVersion || SCHEMA_VERSION,
+  templateId: inferTemplateId(project.templateId, project.category),
   entities: Array.isArray(project.entities)
     ? project.entities.map((entity) => ({ ...entity, tags: [...(entity.tags || [])] }))
     : [],
@@ -172,6 +176,7 @@ const cleanImportedProject = (
     title: importedProject.title || current.title,
     subtitle: importedProject.subtitle || current.subtitle,
     category: importedProject.category || current.category,
+    templateId: inferTemplateId(importedProject.templateId, importedProject.category || current.category),
     entities: Array.isArray(importedProject.entities) ? importedProject.entities : [],
     events: Array.isArray(importedProject.events) ? importedProject.events : [],
     entityRelations: Array.isArray(importedProject.entityRelations)
@@ -248,19 +253,14 @@ export const useFushengluStore = create<StoreState>()(
         addProject: (draft) => {
           const id = makeId('project')
           const project: FushengProject = normalizeProject({
-            schemaVersion: SCHEMA_VERSION,
-            id,
-            title: draft.title || '未命名图谱',
-            subtitle: draft.subtitle || '一份新的叙事案卷。',
+            ...createProjectFromTemplate(
+              draft.templateId,
+              id,
+              draft.title || '未命名图谱',
+              draft.subtitle || '一份新的叙事案卷。',
+            ),
+            templateId: draft.templateId,
             category: draft.category,
-            updatedAt: now(),
-            entities: [],
-            events: [],
-            entityRelations: [],
-            eventLinks: [],
-            libraryItems: [],
-            entityNodePositions: {},
-            eventNodePositions: {},
           })
 
           set((state) => ({ projects: [project, ...state.projects.map(normalizeProject)] }))
@@ -438,7 +438,13 @@ export const useFushengluStore = create<StoreState>()(
 
         restoreSampleData: (projectId) => {
           commitProject(projectId, (project) => ({
-            ...createSampleProject(project.id, project.title, project.category, project.subtitle),
+            ...createSampleProject(
+              project.id,
+              project.title,
+              project.category,
+              project.subtitle,
+              project.templateId,
+            ),
             updatedAt: now(),
           }))
         },
@@ -459,7 +465,7 @@ export const useFushengluStore = create<StoreState>()(
     },
     {
       name: 'fushenglu-storage',
-      version: 2,
+      version: 3,
       partialize: (state) => ({
         projects: state.projects.map(normalizeProject),
         theme: state.theme,

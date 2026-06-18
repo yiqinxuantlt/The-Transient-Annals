@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { createSampleProject } from '../../src/data/sampleData.ts'
 import type { FushengProject } from '../../src/types/index.ts'
 
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 const tagListSchema = z.array(z.string()).default([])
 const positionSchema = z.object({
@@ -25,6 +25,10 @@ const entitySchema = z.object({
   identity: z.string().optional(),
   faction: z.string().optional(),
   motivation: z.string().optional(),
+  birth: z.string().optional(),
+  death: z.string().optional(),
+  dynasty: z.string().optional(),
+  roleArc: z.string().optional(),
   description: z.string().optional(),
   avatarUrl: z.string().optional(),
   tags: tagListSchema,
@@ -35,6 +39,8 @@ const eventSchema = z.object({
   title: z.string().min(1),
   timeLabel: z.string().default(''),
   order: z.number().finite().default(1),
+  chapter: z.string().optional(),
+  eventType: z.string().optional(),
   location: z.string().optional(),
   description: z.string().optional(),
   relatedEntityIds: z.array(z.string()).default([]),
@@ -74,6 +80,7 @@ export const projectSchema = z
     id: z.string().min(1),
     title: z.string().min(1),
     subtitle: z.string().default(''),
+    templateId: z.enum(['history', 'fiction']).optional(),
     category: z
       .enum(['history', 'novel', 'script', 'worldbuilding', 'research'])
       .default('research'),
@@ -89,6 +96,7 @@ export const projectSchema = z
   .transform((project) => ({
     ...project,
     schemaVersion: SCHEMA_VERSION,
+    templateId: project.templateId ?? (project.category === 'history' ? 'history' : 'fiction'),
   }))
 
 export const databaseSchema = z

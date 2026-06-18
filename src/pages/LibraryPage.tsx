@@ -4,6 +4,7 @@ import DetailPanel from '../components/DetailPanel'
 import EditorModal from '../components/EditorModal'
 import { useProject } from '../hooks/useProject'
 import { useFushengluStore } from '../store/useFushengluStore'
+import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection, LibraryItemKind } from '../types'
 
 const kindLabel: Record<LibraryItemKind, string> = {
@@ -28,6 +29,7 @@ const emptyDraft = {
 
 export default function LibraryPage() {
   const project = useProject()
+  const template = getProjectTemplate(project.templateId, project.category)
   const addLibraryItem = useFushengluStore((state) => state.addLibraryItem)
   const deleteLibraryItem = useFushengluStore((state) => state.deleteLibraryItem)
   const [selection, setSelection] = useState<DetailSelection>(
@@ -57,10 +59,10 @@ export default function LibraryPage() {
         <div className="rounded-lg border border-ink-900/10 bg-paper-50 p-6 shadow-soft">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm text-ink-500">Library</p>
-              <h2 className="mt-1 font-serif text-3xl font-semibold">藏卷</h2>
+              <p className="text-sm text-ink-500">{template.pages.library.eyebrow}</p>
+              <h2 className="mt-1 font-serif text-3xl font-semibold">{template.pages.library.title}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-ink-700">
-                存放资料、引用、备注、灵感片段和原文摘录，作为图谱之外的创作与研究底稿。
+                {template.pages.library.description}
               </p>
             </div>
             <button
@@ -69,7 +71,7 @@ export default function LibraryPage() {
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-ink-900 px-5 text-paper-50 shadow-soft transition hover:bg-ink-700"
             >
               <Plus size={18} />
-              新增藏卷
+              {template.pages.library.addLabel}
             </button>
           </div>
         </div>
@@ -122,7 +124,7 @@ export default function LibraryPage() {
 
       <EditorModal
         open={open}
-        title="新增藏卷"
+        title={template.pages.library.addLabel}
         submitLabel="保存"
         onClose={() => setOpen(false)}
         onSubmit={submit}
