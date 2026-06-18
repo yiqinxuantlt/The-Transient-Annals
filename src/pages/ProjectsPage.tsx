@@ -1,4 +1,4 @@
-import { ArrowRight, FolderKanban, Plus } from 'lucide-react'
+import { ArrowRight, BookMarked, FolderKanban, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useFushengluStore } from '../store/useFushengluStore'
 import { getProjectTemplate } from '../templates/projectTemplates'
@@ -25,13 +25,22 @@ export default function ProjectsPage() {
             每个项目都是独立案卷。新建时可选择历史或小说模板，字段、导航和示例数据会随模板变化。
           </p>
         </div>
-        <Link
-          to="/projects/new"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-ink-900 px-5 text-paper-50 shadow-soft transition hover:bg-ink-700"
-        >
-          <Plus size={18} />
-          新建图谱
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to="/help"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-ink-900/10 bg-paper-50/80 px-5 text-ink-800 shadow-soft transition hover:bg-paper-50"
+          >
+            <BookMarked size={18} />
+            使用手册
+          </Link>
+          <Link
+            to="/projects/new"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-ink-900 px-5 text-paper-50 shadow-soft transition hover:bg-ink-700"
+          >
+            <Plus size={18} />
+            新建图谱
+          </Link>
+        </div>
       </div>
 
       <div className="mt-9 grid gap-5 md:grid-cols-2 xl:grid-cols-3">

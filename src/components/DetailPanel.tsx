@@ -46,8 +46,15 @@ function Field({ label, value }: { label: string; value?: string | number }) {
   )
 }
 
-export default function DetailPanel({ project, selection, title = '案牍档案', sticky = false, onRelationClick }: Props) {
+export default function DetailPanel({
+  project,
+  selection,
+  title = '案前档案',
+  sticky = false,
+  onRelationClick,
+}: Props) {
   const template = getProjectTemplate(project.templateId, project.category)
+
   let body = (
     <div className="rounded-lg border border-dashed border-ink-900/15 bg-paper-100/55 p-5 text-sm leading-6 text-ink-500">
       请选择人物、事件、关系或线索，右侧会显示完整档案。
@@ -58,7 +65,7 @@ export default function DetailPanel({ project, selection, title = '案牍档案'
     const entity = project.entities.find((item) => item.id === selection.id)
     if (entity) {
       const relatedRelations = project.entityRelations.filter(
-        (r) => r.sourceId === entity.id || r.targetId === entity.id,
+        (relation) => relation.sourceId === entity.id || relation.targetId === entity.id,
       )
 
       body = (
@@ -77,7 +84,10 @@ export default function DetailPanel({ project, selection, title = '案牍档案'
             <Field label="生年" value={entity.birth} />
             <Field label="卒年" value={entity.death} />
             <Field label="阵营 / 所属势力" value={entity.faction} />
-            <Field label={template.id === 'history' ? '政治目标 / 主要诉求' : '动机 / 目标'} value={entity.motivation} />
+            <Field
+              label={template.id === 'history' ? '政治目标 / 主要诉求' : '动机 / 目标'}
+              value={entity.motivation}
+            />
             <Field label="人物弧光" value={entity.roleArc} />
             <Field label="简介" value={entity.description} />
           </div>
@@ -85,24 +95,22 @@ export default function DetailPanel({ project, selection, title = '案牍档案'
             <div>
               <p className="mb-2 text-xs tracking-wide text-ink-500">关联关系</p>
               <div className="space-y-1.5">
-                {relatedRelations.map((rel) => {
+                {relatedRelations.map((relation) => {
                   const otherName =
-                    rel.sourceId === entity.id
-                      ? project.entities.find((e) => e.id === rel.targetId)?.name
-                      : project.entities.find((e) => e.id === rel.sourceId)?.name
-                  const direction = rel.sourceId === entity.id ? '→' : '←'
+                    relation.sourceId === entity.id
+                      ? project.entities.find((item) => item.id === relation.targetId)?.name
+                      : project.entities.find((item) => item.id === relation.sourceId)?.name
+
                   return (
                     <button
-                      key={rel.id}
+                      key={relation.id}
                       type="button"
-                      onClick={() => onRelationClick(rel)}
+                      onClick={() => onRelationClick(relation)}
                       className="flex w-full items-center gap-2 rounded-lg border border-ink-900/8 bg-paper-50/55 px-3 py-2 text-left text-sm transition hover:border-goldline/40 hover:bg-goldline/5"
                     >
                       <Crosshair size={13} className="shrink-0 text-ink-400" />
-                      <span className="text-ink-800">{rel.type}</span>
-                      <span className="ml-auto text-xs text-ink-500">
-                        {direction} {otherName || '未知'}
-                      </span>
+                      <span className="text-ink-800">{relation.type}</span>
+                      <span className="ml-auto text-xs text-ink-500">→ {otherName || '未知'}</span>
                     </button>
                   )
                 })}
@@ -140,7 +148,10 @@ export default function DetailPanel({ project, selection, title = '案牍档案'
             <Field label={template.id === 'history' ? '事件类型' : '情节类型'} value={event.eventType} />
             <Field label="地点" value={event.location} />
             <Field label={`相关${template.entityPlural}`} value={relatedNames} />
-            <Field label={template.id === 'history' ? '事件经过与影响' : '事件描述'} value={event.description} />
+            <Field
+              label={template.id === 'history' ? '事件经过与影响' : '事件描述'}
+              value={event.description}
+            />
           </div>
         </div>
       )

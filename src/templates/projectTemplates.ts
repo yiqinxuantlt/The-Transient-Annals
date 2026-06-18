@@ -52,6 +52,7 @@ type NavConfig = {
   relationGraph: string
   eventGraph: string
   library: string
+  help: string
   settings: string
 }
 
@@ -114,12 +115,13 @@ export const projectTemplates: Record<ProjectTemplateId, ProjectTemplate> = {
     projectKindLabel: '历史专题',
     nav: {
       dashboard: '总览',
-      entities: '人物录',
+      entities: '人物志',
       events: '纪事簿',
       timeline: '编年轴',
       relationGraph: '势力图',
       eventGraph: '因果图',
       library: '史料库',
+      help: '使用手册',
       settings: '设置',
     },
     searchPlaceholder: '搜索人物、事件、朝代、地点或史料',
@@ -138,7 +140,7 @@ export const projectTemplates: Record<ProjectTemplateId, ProjectTemplate> = {
     pages: {
       entities: {
         eyebrow: 'Historical Figures',
-        title: '人物录',
+        title: '人物志',
         description: '记录人物身份、时代归属、生卒信息、势力关系和史料备注。',
         addLabel: '新增人物',
         search: '搜索姓名、身份、朝代、势力或标签',
@@ -153,7 +155,7 @@ export const projectTemplates: Record<ProjectTemplateId, ProjectTemplate> = {
       timeline: {
         eyebrow: 'CHRONICLE ARCHIVE',
         title: '编年轴',
-        description: '按历史顺序展开事件节点，适合梳理时代更替、战役推进与政治转折。',
+        description: '按历史顺序展开事件节点，适合梳理时代更替、战争推进与政治转折。',
         detailTitle: '史案档案',
       },
       relationGraph: {
@@ -166,7 +168,7 @@ export const projectTemplates: Record<ProjectTemplateId, ProjectTemplate> = {
       eventGraph: {
         eyebrow: 'Causality Map',
         title: '因果图',
-        description: '串联起义、战役、政变、盟约与制度变化之间的因果链条。',
+        description: '串联起起义、战争、政变、盟约与制度变化之间的因果链条。',
         composerTitle: '新增事件因果',
         notesTitle: '因果线索',
       },
@@ -187,7 +189,7 @@ export const projectTemplates: Record<ProjectTemplateId, ProjectTemplate> = {
     entityFields: [
       { key: 'name', label: '姓名', placeholder: '例如：刘邦' },
       { key: 'type', label: '类型' },
-      { key: 'identity', label: '身份 / 称号', placeholder: '例如：汉王、楚霸王' },
+      { key: 'identity', label: '身份 / 称号', placeholder: '例如：汉王、西楚霸王' },
       { key: 'dynasty', label: '时代 / 朝代', placeholder: '例如：秦末汉初' },
       { key: 'birth', label: '生年', placeholder: '例如：前256年' },
       { key: 'death', label: '卒年', placeholder: '例如：前195年' },
@@ -207,7 +209,7 @@ export const projectTemplates: Record<ProjectTemplateId, ProjectTemplate> = {
       { key: 'tags', label: '标签', wide: true },
     ],
     relationTypes: ['联盟', '对立', '君臣', '师友', '隶属', '亲族', '政治交易', '军事协作'],
-    eventLinkTypes: ['导致', '加速', '转折', '背景', '回应', '削弱', '奠定基础'],
+    eventLinkTypes: ['导致', '推动', '转折', '背景', '回应', '削弱', '奠定基础'],
     defaultEntityType: 'person',
     defaultEntityTags: ['待考据'],
     defaultEventTags: ['历史节点'],
@@ -232,6 +234,7 @@ export const projectTemplates: Record<ProjectTemplateId, ProjectTemplate> = {
       relationGraph: '群像图',
       eventGraph: '因果图',
       library: '藏卷',
+      help: '使用手册',
       settings: '设置',
     },
     searchPlaceholder: '搜索角色、事件、伏笔、章节或资料',
@@ -244,7 +247,7 @@ export const projectTemplates: Record<ProjectTemplateId, ProjectTemplate> = {
     libraryLabel: '藏卷',
     dashboard: {
       eyebrow: 'Story Archive',
-      relationPreviewTitle: '人物与势力关系预览',
+      relationPreviewTitle: '人物与阵营关系预览',
       timelinePreviewTitle: '情节推进',
     },
     pages: {
@@ -266,7 +269,7 @@ export const projectTemplates: Record<ProjectTemplateId, ProjectTemplate> = {
         eyebrow: 'TIMELINE ARCHIVE',
         title: '流年轴',
         description: '以时间推进为主线整理章节、线索与人物行动。每个事件都是可追溯的档案节点。',
-        detailTitle: '案牍档案',
+        detailTitle: '案前档案',
       },
       relationGraph: {
         eyebrow: 'Relation Map',
@@ -333,6 +336,7 @@ export const templateNavItems = [
   { to: 'relation-graph', key: 'relationGraph', icon: Network },
   { to: 'event-graph', key: 'eventGraph', icon: GitBranch },
   { to: 'library', key: 'library', icon: Archive },
+  { to: 'help', key: 'help', icon: BookMarked },
   { to: 'settings', key: 'settings', icon: Settings },
 ] as const
 

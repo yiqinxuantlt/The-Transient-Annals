@@ -16,9 +16,9 @@ const tones: Array<{ value: EdgeTone; label: string; className: string }> = [
 
 const edgeTypes: Array<{ value: EdgeType; label: string; icon: string }> = [
   { value: 'straight', label: '直线', icon: '─' },
-  { value: 'smoothstep', label: '折线', icon: '⌐' },
-  { value: 'bezier', label: '曲线', icon: '∼' },
-  { value: 'step', label: '阶梯', icon: '⊏' },
+  { value: 'smoothstep', label: '折线', icon: '┐' },
+  { value: 'bezier', label: '曲线', icon: '∿' },
+  { value: 'step', label: '阶梯', icon: '└' },
 ]
 
 type Props = {
@@ -39,7 +39,6 @@ export default function EdgeStyleControls({ value, onChange }: Props) {
 
   return (
     <div className="grid gap-3">
-      {/* Line style */}
       <div>
         <p className="mb-2 text-xs text-ink-500">线型</p>
         <div className="grid grid-cols-3 gap-2">
@@ -68,9 +67,8 @@ export default function EdgeStyleControls({ value, onChange }: Props) {
         </div>
       </div>
 
-      {/* Edge routing type */}
       <div>
-        <p className="mb-2 text-xs text-ink-500">连线类型</p>
+        <p className="mb-2 text-xs text-ink-500">连接类型</p>
         <div className="grid grid-cols-4 gap-1.5">
           {edgeTypes.map((item) => (
             <button
@@ -91,7 +89,6 @@ export default function EdgeStyleControls({ value, onChange }: Props) {
         </div>
       </div>
 
-      {/* Color */}
       <div>
         <p className="mb-2 text-xs text-ink-500">颜色</p>
         <div className="grid grid-cols-4 gap-2">
@@ -115,7 +112,6 @@ export default function EdgeStyleControls({ value, onChange }: Props) {
         </div>
       </div>
 
-      {/* Line width */}
       <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs text-ink-500">线宽</p>
@@ -132,7 +128,6 @@ export default function EdgeStyleControls({ value, onChange }: Props) {
         />
       </div>
 
-      {/* Animation toggle */}
       <label className="flex min-h-10 items-center justify-between rounded-lg border border-ink-900/10 bg-paper-50/65 px-3 text-sm text-ink-700">
         <span>流动效果</span>
         <input

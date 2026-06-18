@@ -11,8 +11,6 @@ import { useFushengluStore } from '../store/useFushengluStore'
 import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection, EntityRelation, EntityRelationDraft } from '../types'
 
-/* ── Inner component (has access to useReactFlow via parent ReactFlowProvider) ── */
-
 function RelationGraphInner() {
   const project = useProject()
   const template = getProjectTemplate(project.templateId, project.category)
@@ -44,43 +42,43 @@ function RelationGraphInner() {
       ? project.entityRelations.find((relation) => relation.id === selection.id)
       : undefined
 
-  /* ── Time slider: compute year range from project data ── */
   const { minYear, maxYear, hasYearData } = useMemo(() => {
     const years: number[] = []
-    for (const e of project.entities) {
-      if (e.startYear != null) years.push(e.startYear)
-      if (e.endYear != null) years.push(e.endYear)
+    for (const entity of project.entities) {
+      if (entity.startYear != null) years.push(entity.startYear)
+      if (entity.endYear != null) years.push(entity.endYear)
     }
-    for (const r of project.entityRelations) {
-      if (r.startYear != null) years.push(r.startYear)
-      if (r.endYear != null) years.push(r.endYear)
+    for (const relation of project.entityRelations) {
+      if (relation.startYear != null) years.push(relation.startYear)
+      if (relation.endYear != null) years.push(relation.endYear)
     }
-    for (const ev of project.events) {
-      if (ev.startYear != null) years.push(ev.startYear)
-      if (ev.endYear != null) years.push(ev.endYear)
+    for (const event of project.events) {
+      if (event.startYear != null) years.push(event.startYear)
+      if (event.endYear != null) years.push(event.endYear)
     }
-    for (const el of project.eventLinks) {
-      if (el.startYear != null) years.push(el.startYear)
-      if (el.endYear != null) years.push(el.endYear)
+    for (const link of project.eventLinks) {
+      if (link.startYear != null) years.push(link.startYear)
+      if (link.endYear != null) years.push(link.endYear)
     }
     if (years.length === 0) return { minYear: 0, maxYear: 0, hasYearData: false }
     return { minYear: Math.min(...years), maxYear: Math.max(...years), hasYearData: true }
   }, [project.entities, project.entityRelations, project.events, project.eventLinks])
 
-  // null means "show all" (no temporal filtering)
   const [currentYear, setCurrentYear] = useState<number | null>(null)
 
-  /* Filtered relations for the sidebar list */
   const visibleRelations = useMemo(() => {
     if (currentYear == null) return project.entityRelations
-    return project.entityRelations.filter((r) => {
-      if (r.startYear != null && currentYear < r.startYear) return false
-      if (r.endYear != null && currentYear > r.endYear) return false
+    return project.entityRelations.filter((relation) => {
+      if (relation.startYear != null && currentYear < relation.startYear) return false
+      if (relation.endYear != null && currentYear > relation.endYear) return false
       return true
     })
   }, [project.entityRelations, currentYear])
 
-  const openComposer = (sourceId = initialRelation.sourceId, targetId = initialRelation.targetId) => {
+  const openComposer = (
+    sourceId = initialRelation.sourceId,
+    targetId = initialRelation.targetId,
+  ) => {
     setDraft((value) => ({
       ...value,
       sourceId,
@@ -90,14 +88,15 @@ function RelationGraphInner() {
   }
 
   const submit = () => {
-    if (!draft.sourceId || !draft.targetId || !draft.type.trim() || draft.sourceId === draft.targetId) return
+    if (!draft.sourceId || !draft.targetId || !draft.type.trim() || draft.sourceId === draft.targetId) {
+      return
+    }
     const id = addRelation(project.id, { ...draft, type: draft.type.trim() })
     setSelection({ kind: 'entityRelation', id })
     setDraft(initialRelation)
     setComposerOpen(false)
   }
 
-  /** Clicking a relation in the sidebar focuses one endpoint and fits both into view */
   const handleRelationClick = useCallback(
     (relation: EntityRelation) => {
       setSelection({ kind: 'entityRelation', id: relation.id })
@@ -105,7 +104,7 @@ function RelationGraphInner() {
       setTimeout(() => {
         const allNodes = getNodes()
         const targetNodes = allNodes.filter(
-          (n) => n.id === relation.sourceId || n.id === relation.targetId,
+          (node) => node.id === relation.sourceId || node.id === relation.targetId,
         )
         fitView({
           nodes: targetNodes.length ? targetNodes : undefined,
@@ -117,7 +116,6 @@ function RelationGraphInner() {
     [fitView, getNodes],
   )
 
-  /** DAG auto-layout: compute positions with dagre, save all at once, then fitView */
   const handleAutoLayout = useCallback(() => {
     const positions = computeEntityLayout(project.entities, project.entityRelations, {
       rankdir: 'TB',
@@ -125,9 +123,7 @@ function RelationGraphInner() {
       ranksep: 130,
     })
     batchUpdatePositions(project.id, positions)
-    // Clear focus mode when layout changes
     setFocusNodeId(null)
-    // Fit view after positions update
     setTimeout(() => {
       fitView({ duration: 600, padding: 0.3 })
     }, 80)
@@ -136,14 +132,10 @@ function RelationGraphInner() {
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <section className="relative min-h-[calc(100dvh-9rem)] rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm text-ink-500">{template.pages.relationGraph.eyebrow}</p>
-            <h2 className="mt-1 font-serif text-3xl font-semibold">{template.pages.relationGraph.title}</h2>
-            <p className="mt-2 text-sm text-ink-700">
-              {template.pages.relationGraph.description}
-            </p>
-          </div>
+        <div className="mb-5">
+          <p className="text-sm text-ink-500">{template.pages.relationGraph.eyebrow}</p>
+          <h2 className="mt-1 font-serif text-3xl font-semibold">{template.pages.relationGraph.title}</h2>
+          <p className="mt-2 text-sm text-ink-700">{template.pages.relationGraph.description}</p>
         </div>
 
         {composerOpen ? (
@@ -244,20 +236,19 @@ function RelationGraphInner() {
                   type="button"
                   onClick={handleAutoLayout}
                   className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-goldline/30 bg-paper-50/90 px-4 text-sm text-ink-800 shadow-soft backdrop-blur transition hover:bg-paper-50"
-                  title="使用 DAG 算法自动排列节点"
+                  title="使用 DAG 自动整理节点"
                 >
                   <LayoutGrid size={17} />
                   自动整理
                 </button>
                 <span className="hidden min-h-10 items-center rounded-lg border border-ink-900/10 bg-paper-50/80 px-3 text-xs text-ink-600 shadow-soft backdrop-blur md:inline-flex">
-                  点击节点聚焦关系 · 拖动势力框移动整组 · 拖动节点可保存布局
+                  点击节点聚焦关系 · 拖动节点保存布局 · 拖出连接快速建边
                 </span>
               </>
             }
           />
         </div>
 
-        {/* Time Slider — 四维时空探索 */}
         {hasYearData ? (
           <div className="mt-4">
             <TimeSlider
@@ -321,16 +312,16 @@ function RelationGraphInner() {
                     </button>
                   </div>
                   <p className="mt-1 pl-6 text-xs text-ink-500">
-                    {project.entities.find((e) => e.id === relation.sourceId)?.name}
+                    {project.entities.find((entity) => entity.id === relation.sourceId)?.name}
                     {' → '}
-                    {project.entities.find((e) => e.id === relation.targetId)?.name}
+                    {project.entities.find((entity) => entity.id === relation.targetId)?.name}
                   </p>
                 </div>
               )
             })}
             {currentYear != null && visibleRelations.length < project.entityRelations.length ? (
               <p className="pt-1 text-center text-xs text-ink-400">
-                已隐藏 {project.entityRelations.length - visibleRelations.length} 条当前年份不可见的关系
+                已隐藏 {project.entityRelations.length - visibleRelations.length} 条当前年份不可见的关系。
               </p>
             ) : null}
           </div>
@@ -339,8 +330,6 @@ function RelationGraphInner() {
     </div>
   )
 }
-
-/* ── Exported wrapper with ReactFlowProvider ── */
 
 export default function RelationGraphPage() {
   return (

@@ -1,5 +1,5 @@
-import { BookOpen, FolderOpen, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import clsx from 'clsx'
+import { BookOpen, FolderOpen, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import { useFushengluStore } from '../store/useFushengluStore'
 import { getProjectTemplate, templateNavItems } from '../templates/projectTemplates'
@@ -54,7 +54,7 @@ export default function ProjectSidebar({ projectId, templateId }: Props) {
               collapsed && 'lg:hidden',
             )}
           >
-            {template.name} · 档案管理工作台
+            {template.name} · 案卷管理工作台
           </p>
           <div className={clsx('flex items-center gap-2', collapsed ? 'lg:flex-col' : 'lg:mt-5')}>
             <Link

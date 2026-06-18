@@ -49,7 +49,7 @@ export default function TemplateSelectPage() {
           返回项目
         </Link>
         <div className="mt-7 max-w-3xl">
-          <p className="text-sm text-ink-500">Project Templates</p>
+          <p className="text-sm text-ink-500">项目模板</p>
           <h1 className="mt-2 font-serif text-4xl font-semibold text-ink-900">选择项目模板</h1>
           <p className="mt-3 text-sm leading-7 text-ink-700">
             不同模板会影响导航名称、表单字段、默认标签、关系类型、事件连接类型和示例数据。

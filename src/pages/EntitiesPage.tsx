@@ -352,44 +352,44 @@ export default function EntitiesPage() {
             </select>
           </label>
           {template.entityFields.some((field) => field.key === 'identity') ? (
-          <label className="grid gap-2 text-sm">
-            身份
-            <input
-              value={draft.identity}
-              onChange={(event) => setDraft((value) => ({ ...value, identity: event.target.value }))}
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
-            />
-          </label>
+            <label className="grid gap-2 text-sm">
+              身份
+              <input
+                value={draft.identity}
+                onChange={(event) => setDraft((value) => ({ ...value, identity: event.target.value }))}
+                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              />
+            </label>
           ) : null}
           {template.entityFields.some((field) => field.key === 'dynasty') ? (
-          <label className="grid gap-2 text-sm">
-            时代 / 朝代
-            <input
-              value={draft.dynasty}
-              onChange={(event) => setDraft((value) => ({ ...value, dynasty: event.target.value }))}
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
-            />
-          </label>
+            <label className="grid gap-2 text-sm">
+              时代 / 朝代
+              <input
+                value={draft.dynasty}
+                onChange={(event) => setDraft((value) => ({ ...value, dynasty: event.target.value }))}
+                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              />
+            </label>
           ) : null}
           {template.entityFields.some((field) => field.key === 'birth') ? (
-          <label className="grid gap-2 text-sm">
-            生年
-            <input
-              value={draft.birth}
-              onChange={(event) => setDraft((value) => ({ ...value, birth: event.target.value }))}
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
-            />
-          </label>
+            <label className="grid gap-2 text-sm">
+              生年
+              <input
+                value={draft.birth}
+                onChange={(event) => setDraft((value) => ({ ...value, birth: event.target.value }))}
+                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              />
+            </label>
           ) : null}
           {template.entityFields.some((field) => field.key === 'death') ? (
-          <label className="grid gap-2 text-sm">
-            卒年
-            <input
-              value={draft.death}
-              onChange={(event) => setDraft((value) => ({ ...value, death: event.target.value }))}
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
-            />
-          </label>
+            <label className="grid gap-2 text-sm">
+              卒年
+              <input
+                value={draft.death}
+                onChange={(event) => setDraft((value) => ({ ...value, death: event.target.value }))}
+                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              />
+            </label>
           ) : null}
           <label className="grid gap-2 text-sm">
             阵营 / 所属势力

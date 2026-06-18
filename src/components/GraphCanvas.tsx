@@ -26,14 +26,6 @@ import type {
 } from '../types'
 import AvatarBadge from './AvatarBadge'
 
-/**
- * Phase 1 & 2 graph enhancements:
- * 1. Focus mode (Ego-Network)
- * 2. Semantic edge types
- * 3. Faction stripe + Faction group nodes (sub-flow)
- * 4. DAG auto-layout toolbar button
- */
-
 type GraphConnection = { sourceId: string; targetId: string }
 
 type Props = {
@@ -46,33 +38,20 @@ type Props = {
   onNodePositionChange?: (nodeId: string, position: GraphNodePosition) => void
   focusNodeId?: string | null
   onFocusNodeChange?: (nodeId: string | null) => void
-  /** Current timeline year for temporal filtering (undefined = show all) */
   currentYear?: number | null
 }
-
-/* ── Node data types ── */
 
 type EntityNodeData = {
   entity: Entity
   compact?: boolean
-  focusEgo?: boolean
+  dimmed?: boolean
 }
 
 type EventNodeData = {
   event: StoryEvent
   compact?: boolean
-  focusEgo?: boolean
+  dimmed?: boolean
 }
-
-type FactionGroupData = {
-  label: string
-  factionColor: string
-  width: number
-  height: number
-  focusEgo?: boolean
-}
-
-/* ── Default positions ── */
 
 const entityPositions = [
   { x: 30, y: 120 },
@@ -95,8 +74,6 @@ const eventPositions = [
   { x: 1240, y: 300 },
 ]
 
-/* ── Entity type labels ── */
-
 const entityTypeLabel: Record<Entity['type'], string> = {
   person: '人物',
   character: '角色',
@@ -105,49 +82,17 @@ const entityTypeLabel: Record<Entity['type'], string> = {
   other: '其他',
 }
 
-/* ── Faction → theme color mapping ── */
-
-const factionColorMap: Record<string, string> = {
-  '汉军': 'rgb(var(--cinnabar))',
-  '楚军': 'rgb(var(--ink-700))',
-  '战略地域': 'rgb(var(--goldline))',
-  '故乡旧族': 'rgb(var(--goldline))',
-  '边境商队': 'rgb(var(--jade))',
-  '藏书院': 'rgb(var(--jade))',
-  '反派组织': 'rgb(var(--cinnabar))',
-  '黑鸦会': 'rgb(var(--cinnabar))',
-  '旧址': 'rgb(var(--ink-500))',
-}
-
-function getFactionColor(faction?: string): string | undefined {
-  if (!faction) return undefined
-  return factionColorMap[faction] ?? 'rgb(var(--goldline) / 0.5)'
-}
-
-/* ── Group node: excluded factions ── */
-const EXCLUDED_GROUP_FACTIONS = new Set(['战略地域', '旧址'])
-
-/* ══════════════════════════════════════════
-   Custom Node Components
-   ══════════════════════════════════════════ */
-
 function EntityGraphNode({ data, selected }: NodeProps<EntityNodeData>) {
-  const { entity, compact, focusEgo } = data
-  const factionColor = getFactionColor(entity.faction)
+  const { entity, compact, dimmed } = data
 
   return (
     <div
       className={[
-        'relative min-w-[196px] rounded-lg border bg-paper-50/95 p-3 text-left text-ink-900 shadow-soft backdrop-blur-sm transition-all duration-300',
+        'min-w-[196px] rounded-lg border bg-paper-50/95 p-3 text-left text-ink-900 shadow-soft backdrop-blur-sm transition-all duration-300',
         selected ? 'border-cinnabar/60 ring-2 ring-cinnabar/15' : 'border-goldline/35',
         compact ? 'min-w-[154px] p-2' : '',
       ].join(' ')}
-      style={{
-        opacity: focusEgo === false ? 0.1 : 1,
-        pointerEvents: focusEgo === false ? 'none' : 'auto',
-        borderLeftWidth: factionColor ? '4px' : undefined,
-        borderLeftColor: factionColor,
-      }}
+      style={{ opacity: dimmed ? 0.14 : 1 }}
     >
       <Handle type="target" position={Position.Left} className="!h-2.5 !w-2.5" />
       <Handle type="source" position={Position.Right} className="!h-2.5 !w-2.5" />
@@ -179,25 +124,22 @@ function EntityGraphNode({ data, selected }: NodeProps<EntityNodeData>) {
 }
 
 function EventGraphNode({ data, selected }: NodeProps<EventNodeData>) {
-  const { event, compact, focusEgo } = data
+  const { event, compact, dimmed } = data
 
   return (
     <div
       className={[
-        'relative min-w-[210px] rounded-lg border bg-paper-50/95 p-4 text-left text-ink-900 shadow-soft backdrop-blur-sm transition-all duration-300',
+        'min-w-[210px] rounded-lg border bg-paper-50/95 p-4 text-left text-ink-900 shadow-soft backdrop-blur-sm transition-all duration-300',
         selected ? 'border-jade/70 ring-2 ring-jade/15' : 'border-cinnabar/30',
         compact ? 'min-w-[166px] p-3' : '',
       ].join(' ')}
-      style={{
-        opacity: focusEgo === false ? 0.1 : 1,
-        pointerEvents: focusEgo === false ? 'none' : 'auto',
-      }}
+      style={{ opacity: dimmed ? 0.14 : 1 }}
     >
       <Handle type="target" position={Position.Left} className="!h-2.5 !w-2.5" />
       <Handle type="source" position={Position.Right} className="!h-2.5 !w-2.5" />
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] text-ink-500">{event.timeLabel || `序 ${event.order}`}</p>
+          <p className="text-[11px] text-ink-500">{event.timeLabel || `顺序 ${event.order}`}</p>
           <p className="mt-1 font-serif text-base font-semibold text-ink-900">{event.title}</p>
         </div>
         <span className="rounded-full bg-jade/10 px-2 py-1 text-[11px] text-jade">#{event.order}</span>
@@ -222,43 +164,10 @@ function EventGraphNode({ data, selected }: NodeProps<EventNodeData>) {
   )
 }
 
-/** Faction group container node (sub-flow parent) */
-function FactionGroupNode({ data }: NodeProps<FactionGroupData>) {
-  const { label, factionColor, width, height, focusEgo } = data
-
-  return (
-    <div
-      className="rounded-xl border-2 border-dashed transition-opacity duration-300"
-      style={{
-        width,
-        height,
-        borderColor: factionColor,
-        backgroundColor: factionColor.replace(')', ' / 0.04)').replace('rgb(', 'rgb('),
-        opacity: focusEgo === false ? 0.15 : 1,
-      }}
-    >
-      <div
-        className="absolute -top-3 left-4 rounded-full px-2.5 py-0.5 font-serif text-[11px] font-semibold tracking-wide"
-        style={{
-          backgroundColor: factionColor.replace(')', ' / 0.12)').replace('rgb(', 'rgb('),
-          color: factionColor,
-        }}
-      >
-        {label}
-      </div>
-    </div>
-  )
-}
-
 const nodeTypes = {
   archiveEntity: EntityGraphNode,
   archiveEvent: EventGraphNode,
-  factionGroup: FactionGroupNode,
 }
-
-/* ══════════════════════════════════════════
-   Edge Helpers
-   ══════════════════════════════════════════ */
 
 const toneColor: Record<EdgeTone, string> = {
   cinnabar: 'rgb(var(--cinnabar))',
@@ -303,14 +212,22 @@ function visualForEdge(
   const tone = style?.tone || fallbackTone
   const edgeType = style?.edgeType || inferEdgeType(type)
   const lineWidth = style?.lineWidth || 2
-  const animated = style?.animated ?? (
-    type.includes('伏笔') ||
-    type.includes('推动') ||
-    type.includes('隐瞒') ||
-    isConflictRelation(type)
-  )
+  const animated =
+    style?.animated ??
+    (type.includes('伏笔') ||
+      type.includes('推动') ||
+      type.includes('隐瞒') ||
+      isConflictRelation(type))
 
-  return { lineStyle, tone, edgeType, lineWidth, animated, color: toneColor[tone], dash: dashByLineStyle[lineStyle] }
+  return {
+    lineStyle,
+    tone,
+    edgeType,
+    lineWidth,
+    animated,
+    color: toneColor[tone],
+    dash: dashByLineStyle[lineStyle],
+  }
 }
 
 function graphEdge(
@@ -346,15 +263,6 @@ function graphEdge(
   }
 }
 
-/* ══════════════════════════════════════════
-   Graph Construction
-   ══════════════════════════════════════════ */
-
-const GROUP_PADDING = 44
-const NODE_APPROX_W = 220
-const NODE_APPROX_H = 135
-
-/** Check if an item with optional startYear/endYear is valid at a given year */
 function isValidAtYear(
   item: { startYear?: number; endYear?: number },
   year: number | null | undefined,
@@ -367,131 +275,58 @@ function isValidAtYear(
 
 function buildGraph(project: FushengProject, mode: Props['mode'], compact?: boolean, currentYear?: number | null) {
   if (mode === 'entities') {
-    /* ── 0. Filter entities and relations by current year ── */
-    const filteredEntities = project.entities.filter((e) => isValidAtYear(e, currentYear))
-    const filteredEntityIds = new Set(filteredEntities.map((e) => e.id))
-    const filteredRelations = project.entityRelations.filter(
-      (r) =>
-        isValidAtYear(r, currentYear) &&
-        filteredEntityIds.has(r.sourceId) &&
-        filteredEntityIds.has(r.targetId),
+    const entities = project.entities.filter((entity) => isValidAtYear(entity, currentYear))
+    const visibleEntityIds = new Set(entities.map((entity) => entity.id))
+    const relations = project.entityRelations.filter(
+      (relation) =>
+        isValidAtYear(relation, currentYear) &&
+        visibleEntityIds.has(relation.sourceId) &&
+        visibleEntityIds.has(relation.targetId),
     )
 
-    /* ── 1. Compute absolute positions for all entity nodes ── */
-    const absolutePositions: Record<string, { x: number; y: number }> = {}
-    filteredEntities.forEach((entity, index) => {
-      absolutePositions[entity.id] =
-        project.entityNodePositions?.[entity.id] ||
-        entityPositions[index % entityPositions.length]
-    })
+    const nodes: Node[] = entities.map((entity, index) => ({
+      id: entity.id,
+      type: 'archiveEntity',
+      position: project.entityNodePositions?.[entity.id] || entityPositions[index % entityPositions.length],
+      data: { entity, compact } satisfies EntityNodeData,
+    }))
 
-    /* ── 2. Build faction group nodes (entities with 2+ members) ── */
-    const factionMembers = new Map<string, Entity[]>()
-    for (const entity of filteredEntities) {
-      if (!entity.faction || EXCLUDED_GROUP_FACTIONS.has(entity.faction)) continue
-      const list = factionMembers.get(entity.faction) || []
-      list.push(entity)
-      factionMembers.set(entity.faction, list)
-    }
-
-    const factionGroups: Node<FactionGroupData>[] = []
-    const entityToFaction = new Map<string, string>()
-    const factionAbsolutePositions: Record<string, { x: number; y: number }> = {}
-
-    for (const [faction, members] of factionMembers) {
-      if (members.length < 2) continue
-
-      const color = getFactionColor(faction) || 'rgb(var(--goldline) / 0.5)'
-      const positions = members.map((m) => absolutePositions[m.id])
-      const minX = Math.min(...positions.map((p) => p.x))
-      const minY = Math.min(...positions.map((p) => p.y))
-      const maxX = Math.max(...positions.map((p) => p.x + NODE_APPROX_W))
-      const maxY = Math.max(...positions.map((p) => p.y + NODE_APPROX_H))
-
-      const groupId = `faction-${faction}`
-      const groupAbsPos = {
-        x: minX - GROUP_PADDING,
-        y: minY - GROUP_PADDING - 10,
-      }
-      factionAbsolutePositions[groupId] = groupAbsPos
-
-      for (const m of members) {
-        entityToFaction.set(m.id, groupId)
-      }
-
-      factionGroups.push({
-        id: groupId,
-        type: 'factionGroup',
-        position: groupAbsPos,
-        data: {
-          label: `${faction}阵营`,
-          factionColor: color,
-          width: maxX - minX + GROUP_PADDING * 2,
-          height: maxY - minY + GROUP_PADDING * 2 + 10,
-        },
-        draggable: true,
-        selectable: false,
-        style: { zIndex: -1 },
-      })
-    }
-
-    /* ── 3. Build entity nodes with relative positions if inside a group ── */
-    const nodes: Node[] = [...factionGroups]
-    for (let i = 0; i < filteredEntities.length; i++) {
-      const entity = filteredEntities[i]
-      const absPos = absolutePositions[entity.id]
-      const parentGroupId = entityToFaction.get(entity.id)
-      const groupAbsPos = parentGroupId ? factionAbsolutePositions[parentGroupId] : undefined
-
-      const node: Node<EntityNodeData> = {
-        id: entity.id,
-        type: 'archiveEntity',
-        position: groupAbsPos
-          ? { x: absPos.x - groupAbsPos.x, y: absPos.y - groupAbsPos.y }
-          : absPos,
-        data: { entity, compact },
-      }
-
-      if (parentGroupId) {
-        node.parentNode = parentGroupId
-        node.expandParent = true
-      }
-
-      nodes.push(node)
-    }
-
-    /* ── 4. Build edges ── */
-    const edges: Edge[] = filteredRelations.map((relation) =>
-      graphEdge(relation.id, relation.sourceId, relation.targetId, relation.type, 'cinnabar', relation.style),
+    const edges: Edge[] = relations.map((relation) =>
+      graphEdge(
+        relation.id,
+        relation.sourceId,
+        relation.targetId,
+        relation.type,
+        'cinnabar',
+        relation.style,
+      ),
     )
 
     return { nodes, edges }
   }
 
-  /* ── Event mode ── */
-  const filteredEvents = project.events.filter((e) => isValidAtYear(e, currentYear))
-  const filteredEventIds = new Set(filteredEvents.map((e) => e.id))
-  const filteredEventLinks = project.eventLinks.filter(
-    (l) =>
-      isValidAtYear(l, currentYear) &&
-      filteredEventIds.has(l.sourceEventId) &&
-      filteredEventIds.has(l.targetEventId),
+  const events = project.events.filter((event) => isValidAtYear(event, currentYear))
+  const visibleEventIds = new Set(events.map((event) => event.id))
+  const links = project.eventLinks.filter(
+    (link) =>
+      isValidAtYear(link, currentYear) &&
+      visibleEventIds.has(link.sourceEventId) &&
+      visibleEventIds.has(link.targetEventId),
   )
-  const nodes: Node[] = filteredEvents.map((event, index) => ({
+
+  const nodes: Node[] = events.map((event, index) => ({
     id: event.id,
-    type: 'archiveEvent' as const,
+    type: 'archiveEvent',
     position: project.eventNodePositions?.[event.id] || eventPositions[index % eventPositions.length],
     data: { event, compact } satisfies EventNodeData,
   }))
-  const edges: Edge[] = filteredEventLinks.map((link) =>
+
+  const edges: Edge[] = links.map((link) =>
     graphEdge(link.id, link.sourceEventId, link.targetEventId, link.type, 'jade', link.style),
   )
+
   return { nodes, edges }
 }
-
-/* ══════════════════════════════════════════
-   GraphCanvas Component
-   ══════════════════════════════════════════ */
 
 export default function GraphCanvas({
   project,
@@ -505,70 +340,63 @@ export default function GraphCanvas({
   onFocusNodeChange,
   currentYear,
 }: Props) {
-  const graph = useMemo(() => buildGraph(project, mode, compact, currentYear), [compact, mode, project, currentYear])
+  const graph = useMemo(
+    () => buildGraph(project, mode, compact, currentYear),
+    [compact, currentYear, mode, project],
+  )
   const [nodes, setNodes, onNodesChange] = useNodesState(graph.nodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(graph.edges)
 
-  /* 1. Reset nodes & edges when the underlying graph data changes */
   useEffect(() => {
     setNodes(graph.nodes)
     setEdges(graph.edges)
-  }, [graph, setNodes, setEdges])
+  }, [graph, setEdges, setNodes])
 
-  /* 2. Apply focus-mode ego-network styling (runs after reset) */
   useEffect(() => {
-    const egoNodeIds = new Set<string>()
-    const egoEdgeIds = new Set<string>()
+    if (!focusNodeId) {
+      setNodes((prev) =>
+        prev.map((node) => ({
+          ...node,
+          data: { ...node.data, dimmed: false },
+        })),
+      )
+      setEdges((prev) =>
+        prev.map((edge) => ({
+          ...edge,
+          style: { ...edge.style, opacity: 1, pointerEvents: 'auto' },
+        })),
+      )
+      return
+    }
 
-    if (focusNodeId) {
-      egoNodeIds.add(focusNodeId)
-      // Also add the focused node's faction group
-      for (const node of graph.nodes) {
-        const n = node as Node
-        if (n.id === focusNodeId && n.parentNode) {
-          egoNodeIds.add(n.parentNode as string)
-        }
-      }
-      for (const edge of graph.edges) {
-        if (edge.source === focusNodeId || edge.target === focusNodeId) {
-          egoEdgeIds.add(edge.id)
-          egoNodeIds.add(edge.source)
-          egoNodeIds.add(edge.target)
-          // Include faction groups of connected nodes
-          for (const node of graph.nodes) {
-            const n = node as Node
-            if ((n.id === edge.source || n.id === edge.target) && n.parentNode) {
-              egoNodeIds.add(n.parentNode as string)
-            }
-          }
-        }
+    const focusConnected = new Set<string>([focusNodeId])
+    const activeEdgeIds = new Set<string>()
+
+    for (const edge of graph.edges) {
+      if (edge.source === focusNodeId || edge.target === focusNodeId) {
+        focusConnected.add(edge.source)
+        focusConnected.add(edge.target)
+        activeEdgeIds.add(edge.id)
       }
     }
 
     setNodes((prev) =>
       prev.map((node) => ({
         ...node,
-        data: {
-          ...node.data,
-          focusEgo: focusNodeId ? egoNodeIds.has(node.id) : undefined,
+        data: { ...node.data, dimmed: !focusConnected.has(node.id) },
+      })),
+    )
+    setEdges((prev) =>
+      prev.map((edge) => ({
+        ...edge,
+        style: {
+          ...edge.style,
+          opacity: activeEdgeIds.has(edge.id) ? 1 : 0.12,
+          pointerEvents: activeEdgeIds.has(edge.id) ? 'auto' : 'none',
         },
       })),
     )
-
-    setEdges((prev) =>
-      prev.map((edge) => {
-        const inEgo = focusNodeId ? egoEdgeIds.has(edge.id) : true
-        return {
-          ...edge,
-          style: {
-            ...edge.style,
-            opacity: focusNodeId && !inEgo ? 0.1 : 1,
-            pointerEvents: focusNodeId && !inEgo ? 'none' : 'auto',
-          },
-        }
-      }),
-    )
-  }, [focusNodeId, graph.edges, graph.nodes, setEdges, setNodes])
+  }, [focusNodeId, graph.edges, setEdges, setNodes])
 
   const connectNodes = (connection: Connection) => {
     if (!connection.source || !connection.target || connection.source === connection.target) return
@@ -583,7 +411,6 @@ export default function GraphCanvas({
           'radial-gradient(circle at 18% 18%, rgb(var(--goldline) / 0.12), transparent 26%), linear-gradient(135deg, rgb(var(--paper-50) / 0.96), rgb(var(--paper-100) / 0.9))',
       }}
     >
-      {/* Focus mode indicator + reset */}
       {focusNodeId ? (
         <div className="absolute right-4 top-4 z-10">
           <button
@@ -591,7 +418,7 @@ export default function GraphCanvas({
             onClick={() => onFocusNodeChange?.(null)}
             className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-goldline/30 bg-paper-50/92 px-3 text-xs text-ink-700 shadow-soft backdrop-blur transition hover:bg-paper-50 hover:text-ink-900"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-cinnabar animate-pulse" />
+            <span className="h-1.5 w-1.5 rounded-full animate-pulse bg-cinnabar" />
             退出焦点
           </button>
         </div>
@@ -608,25 +435,12 @@ export default function GraphCanvas({
         onConnect={connectNodes}
         onNodeDragStop={(_, node) => {
           if (compact) return
-          // For grouped nodes, convert relative position back to absolute for storage
-          if (node.parentNode) {
-            const parentNode = nodes.find((n) => n.id === node.parentNode)
-            if (parentNode) {
-              onNodePositionChange?.(node.id, {
-                x: Math.round(node.position.x + parentNode.position.x),
-                y: Math.round(node.position.y + parentNode.position.y),
-              })
-              return
-            }
-          }
           onNodePositionChange?.(node.id, {
             x: Math.round(node.position.x),
             y: Math.round(node.position.y),
           })
         }}
         onNodeClick={(_, node) => {
-          // Skip selection/focus for faction group nodes
-          if (node.type === 'factionGroup') return
           onSelect?.({ kind: mode === 'entities' ? 'entity' : 'event', id: node.id })
           if (focusNodeId === node.id) {
             onFocusNodeChange?.(null)
@@ -659,7 +473,7 @@ export default function GraphCanvas({
         {!compact ? <Controls showInteractive={false} /> : null}
         {!compact ? (
           <MiniMap
-            nodeColor={(n) => (n.type === 'factionGroup' ? 'rgb(var(--goldline) / 0.2)' : 'rgb(var(--goldline))')}
+            nodeColor={() => 'rgb(var(--goldline))'}
             maskColor="rgb(var(--paper-100) / 0.62)"
           />
         ) : null}

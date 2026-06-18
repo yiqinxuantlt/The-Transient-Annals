@@ -48,7 +48,9 @@ export default function EventGraphPage() {
   }
 
   const submit = () => {
-    if (!draft.sourceEventId || !draft.targetEventId || draft.sourceEventId === draft.targetEventId) return
+    if (!draft.sourceEventId || !draft.targetEventId || draft.sourceEventId === draft.targetEventId) {
+      return
+    }
     const id = addEventLink(project.id, draft)
     setSelection({ kind: 'eventLink', id })
     setDraft(initialLink)
@@ -61,9 +63,7 @@ export default function EventGraphPage() {
         <div className="mb-5">
           <p className="text-sm text-ink-500">{template.pages.eventGraph.eyebrow}</p>
           <h2 className="mt-1 font-serif text-3xl font-semibold">{template.pages.eventGraph.title}</h2>
-          <p className="mt-2 text-sm text-ink-700">
-            {template.pages.eventGraph.description}
-          </p>
+          <p className="mt-2 text-sm text-ink-700">{template.pages.eventGraph.description}</p>
         </div>
 
         {composerOpen ? (
@@ -162,7 +162,7 @@ export default function EventGraphPage() {
                   添加连接
                 </button>
                 <span className="hidden min-h-10 items-center rounded-lg border border-ink-900/10 bg-paper-50/80 px-3 text-xs text-ink-600 shadow-soft backdrop-blur md:inline-flex">
-                  伏笔、回收、转折可用不同线型
+                  伏笔、回收、转折可用不同线型区分
                 </span>
               </>
             }

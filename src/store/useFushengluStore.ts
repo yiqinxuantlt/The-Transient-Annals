@@ -83,7 +83,8 @@ type StoreState = {
   clearProjectData: (projectId: string) => void
 }
 
-const SCHEMA_VERSION = 3
+const SCHEMA_VERSION = 4
+const LEGACY_BROKEN_PROJECT_ID = 'project-zizhi-tongjian'
 
 const now = () => new Date().toISOString()
 
@@ -155,16 +156,24 @@ const normalizeProject = (project: FushengProject): FushengProject => ({
   eventNodePositions: normalizePositionMap(project.eventNodePositions),
 })
 
+const isLegacyBrokenProject = (project: FushengProject) =>
+  project.id === LEGACY_BROKEN_PROJECT_ID &&
+  (project.title.includes('?') || project.subtitle.includes('?'))
+
 const normalizeProjects = (projects?: FushengProject[]) =>
   Array.isArray(projects) && projects.length
-    ? projects.map(normalizeProject)
+    ? projects.map(normalizeProject).filter((project) => !isLegacyBrokenProject(project))
     : sampleProjects.map(normalizeProject)
 
 const mergeProjects = (localProjects: FushengProject[], remoteProjects: FushengProject[]) => {
   const merged = new Map<string, FushengProject>()
 
-  remoteProjects.map(normalizeProject).forEach((project) => merged.set(project.id, project))
+  remoteProjects
+    .map(normalizeProject)
+    .filter((project) => !isLegacyBrokenProject(project))
+    .forEach((project) => merged.set(project.id, project))
   localProjects.map(normalizeProject).forEach((project) => {
+    if (isLegacyBrokenProject(project)) return
     const remoteProject = merged.get(project.id)
     if (!remoteProject || new Date(project.updatedAt).getTime() >= new Date(remoteProject.updatedAt).getTime()) {
       merged.set(project.id, project)
@@ -570,7 +579,7 @@ export const useFushengluStore = create<StoreState>()(
     },
     {
       name: 'fushenglu-storage',
-      version: 3,
+      version: 4,
       partialize: (state) => ({
         projects: state.projects.map(normalizeProject),
         theme: state.theme,

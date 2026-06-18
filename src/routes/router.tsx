@@ -5,6 +5,7 @@ import ProjectLayout from '../layouts/ProjectLayout'
 import RootLayout from '../layouts/RootLayout'
 
 const HomePage = lazy(() => import('../pages/HomePage'))
+const HelpPage = lazy(() => import('../pages/HelpPage'))
 const ProjectsPage = lazy(() => import('../pages/ProjectsPage'))
 const TemplateSelectPage = lazy(() => import('../pages/TemplateSelectPage'))
 const ProjectDashboard = lazy(() => import('../pages/ProjectDashboard'))
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
       { index: true, element: page(<HomePage />) },
       { path: 'projects', element: page(<ProjectsPage />) },
       { path: 'projects/new', element: page(<TemplateSelectPage />) },
+      { path: 'help', element: page(<HelpPage />) },
     ],
   },
   {
@@ -53,6 +55,7 @@ export const router = createBrowserRouter([
       { path: 'event-graph', element: page(<EventGraphPage />) },
       { path: 'library', element: page(<LibraryPage />) },
       { path: 'settings', element: page(<ProjectSettingsPage />) },
+      { path: 'help', element: page(<HelpPage />) },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
