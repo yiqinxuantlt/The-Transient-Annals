@@ -7,6 +7,7 @@ import {
   fetchProjectsFromBackend,
   saveProjectToBackend,
 } from '../lib/fushengluApi'
+import { devLogger } from '../lib/devLogger'
 import type {
   BackendStatus,
   EdgeVisualStyle,
@@ -194,10 +195,27 @@ const withoutKey = <T>(record: Record<string, T>, key: string) =>
 export const useFushengluStore = create<StoreState>()(
   persist(
     (set, get) => {
+      const logState = (message: string, details?: Record<string, unknown>) => {
+        devLogger.state('useFushengluStore', message, details)
+      }
+
+      const logEvent = (message: string, details?: Record<string, unknown>) => {
+        devLogger.event('useFushengluStore', message, details)
+      }
+
       const syncProject = (project: FushengProject) => {
         void saveProjectToBackend(normalizeProject(project))
-          .then(() => set({ backendStatus: 'online' }))
-          .catch(() => set({ backendStatus: 'offline' }))
+          .then(() => {
+            logState('Backend sync succeeded', { projectId: project.id })
+            set({ backendStatus: 'online' })
+          })
+          .catch((error) => {
+            logState('Backend sync failed', {
+              projectId: project.id,
+              message: error instanceof Error ? error.message : String(error),
+            })
+            set({ backendStatus: 'offline' })
+          })
       }
 
       const commitProject = (
@@ -225,13 +243,21 @@ export const useFushengluStore = create<StoreState>()(
         backendStatus: 'checking',
 
         hydrateFromBackend: async () => {
+          logState('Backend hydration started')
           set({ backendStatus: 'checking' })
           try {
             const remoteProjects = await fetchProjectsFromBackend()
             const projects = mergeProjects(get().projects, remoteProjects)
             set({ projects, backendStatus: 'online' })
+            logState('Backend hydration succeeded', {
+              remoteProjectCount: remoteProjects.length,
+              mergedProjectCount: projects.length,
+            })
             projects.forEach(syncProject)
-          } catch {
+          } catch (error) {
+            logState('Backend hydration failed', {
+              message: error instanceof Error ? error.message : String(error),
+            })
             set({ backendStatus: 'offline' })
           }
         },
@@ -264,6 +290,11 @@ export const useFushengluStore = create<StoreState>()(
           })
 
           set((state) => ({ projects: [project, ...state.projects.map(normalizeProject)] }))
+          logEvent('Project created', {
+            projectId: id,
+            templateId: draft.templateId,
+            category: draft.category,
+          })
           syncProject(project)
           return id
         },
@@ -273,15 +304,30 @@ export const useFushengluStore = create<StoreState>()(
             ...project,
             ...draft,
           }))
+          logEvent('Project metadata updated', {
+            projectId,
+            templateId: draft.templateId,
+            category: draft.category,
+          })
         },
 
         deleteProject: (projectId) => {
           set((state) => ({
             projects: state.projects.filter((project) => project.id !== projectId),
           }))
+          logEvent('Project deleted', { projectId })
           void deleteProjectFromBackend(projectId)
-            .then(() => set({ backendStatus: 'online' }))
-            .catch(() => set({ backendStatus: 'offline' }))
+            .then(() => {
+              logState('Backend delete succeeded', { projectId })
+              set({ backendStatus: 'online' })
+            })
+            .catch((error) => {
+              logState('Backend delete failed', {
+                projectId,
+                message: error instanceof Error ? error.message : String(error),
+              })
+              set({ backendStatus: 'offline' })
+            })
         },
 
         addEntity: (projectId, draft) => {
@@ -290,6 +336,7 @@ export const useFushengluStore = create<StoreState>()(
             ...project,
             entities: [...project.entities, { id, ...draft }],
           }))
+          logEvent('Entity created', { projectId, entityId: id, type: draft.type })
           return id
         },
 
@@ -300,6 +347,7 @@ export const useFushengluStore = create<StoreState>()(
               entity.id === entityId ? { id: entityId, ...draft } : entity,
             ),
           }))
+          logEvent('Entity updated', { projectId, entityId, type: draft.type })
         },
 
         deleteEntity: (projectId, entityId) => {
@@ -315,6 +363,7 @@ export const useFushengluStore = create<StoreState>()(
             })),
             entityNodePositions: withoutKey(project.entityNodePositions, entityId),
           }))
+          logEvent('Entity deleted', { projectId, entityId })
         },
 
         addEvent: (projectId, draft) => {
@@ -323,6 +372,7 @@ export const useFushengluStore = create<StoreState>()(
             ...project,
             events: [...project.events, { id, ...draft }],
           }))
+          logEvent('Event created', { projectId, eventId: id, eventType: draft.eventType })
           return id
         },
 
@@ -333,6 +383,7 @@ export const useFushengluStore = create<StoreState>()(
               event.id === eventId ? { id: eventId, ...draft } : event,
             ),
           }))
+          logEvent('Event updated', { projectId, eventId, eventType: draft.eventType })
         },
 
         deleteEvent: (projectId, eventId) => {
@@ -344,6 +395,7 @@ export const useFushengluStore = create<StoreState>()(
             ),
             eventNodePositions: withoutKey(project.eventNodePositions, eventId),
           }))
+          logEvent('Event deleted', { projectId, eventId })
         },
 
         addEntityRelation: (projectId, draft) => {
@@ -352,6 +404,11 @@ export const useFushengluStore = create<StoreState>()(
             ...project,
             entityRelations: [...project.entityRelations, { id, ...draft }],
           }))
+          logEvent('Entity relation created', {
+            projectId,
+            relationId: id,
+            relationType: draft.type,
+          })
           return id
         },
 
@@ -362,6 +419,7 @@ export const useFushengluStore = create<StoreState>()(
               relation.id === relationId ? { ...relation, style } : relation,
             ),
           }))
+          logEvent('Entity relation style updated', { projectId, relationId })
         },
 
         deleteEntityRelation: (projectId, relationId) => {
@@ -369,6 +427,7 @@ export const useFushengluStore = create<StoreState>()(
             ...project,
             entityRelations: project.entityRelations.filter((relation) => relation.id !== relationId),
           }))
+          logEvent('Entity relation deleted', { projectId, relationId })
         },
 
         addEventLink: (projectId, draft) => {
@@ -377,6 +436,11 @@ export const useFushengluStore = create<StoreState>()(
             ...project,
             eventLinks: [...project.eventLinks, { id, ...draft }],
           }))
+          logEvent('Event link created', {
+            projectId,
+            linkId: id,
+            linkType: draft.type,
+          })
           return id
         },
 
@@ -387,6 +451,7 @@ export const useFushengluStore = create<StoreState>()(
               link.id === linkId ? { ...link, style } : link,
             ),
           }))
+          logEvent('Event link style updated', { projectId, linkId })
         },
 
         deleteEventLink: (projectId, linkId) => {
@@ -394,6 +459,7 @@ export const useFushengluStore = create<StoreState>()(
             ...project,
             eventLinks: project.eventLinks.filter((link) => link.id !== linkId),
           }))
+          logEvent('Event link deleted', { projectId, linkId })
         },
 
         updateEntityNodePosition: (projectId, entityId, position) => {
@@ -422,6 +488,7 @@ export const useFushengluStore = create<StoreState>()(
             ...project,
             libraryItems: [{ id, createdAt: now(), ...draft }, ...project.libraryItems],
           }))
+          logEvent('Library item created', { projectId, itemId: id, kind: draft.kind })
           return id
         },
 
@@ -430,10 +497,17 @@ export const useFushengluStore = create<StoreState>()(
             ...project,
             libraryItems: project.libraryItems.filter((item) => item.id !== itemId),
           }))
+          logEvent('Library item deleted', { projectId, itemId })
         },
 
         replaceProjectData: (projectId, importedProject) => {
           commitProject(projectId, (project) => cleanImportedProject(project, importedProject))
+          logEvent('Project data replaced', {
+            projectId,
+            entityCount: importedProject.entities?.length || 0,
+            eventCount: importedProject.events?.length || 0,
+            libraryItemCount: importedProject.libraryItems?.length || 0,
+          })
         },
 
         restoreSampleData: (projectId) => {
@@ -447,6 +521,7 @@ export const useFushengluStore = create<StoreState>()(
             ),
             updatedAt: now(),
           }))
+          logEvent('Sample data restored', { projectId })
         },
 
         clearProjectData: (projectId) => {
@@ -460,6 +535,7 @@ export const useFushengluStore = create<StoreState>()(
             entityNodePositions: {},
             eventNodePositions: {},
           }))
+          logEvent('Project data cleared', { projectId })
         },
       }
     },

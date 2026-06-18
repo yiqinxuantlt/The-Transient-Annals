@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { RouterProvider } from 'react-router-dom'
+import { DevLogPanel } from './components/DevLogPanel'
 import { router } from './routes/router'
 import { useFushengluStore } from './store/useFushengluStore'
 
@@ -15,7 +16,12 @@ function App() {
     void hydrateFromBackend()
   }, [hydrateFromBackend])
 
-  return <RouterProvider router={router} />
+  return (
+    <>
+      <RouterProvider router={router} />
+      {import.meta.env.DEV ? <DevLogPanel /> : null}
+    </>
+  )
 }
 
 export default App
