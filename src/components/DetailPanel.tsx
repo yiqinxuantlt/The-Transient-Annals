@@ -1,6 +1,6 @@
-import { Archive, GitBranch, Link2, ScrollText } from 'lucide-react'
+import { Archive, Crosshair, GitBranch, Link2, ScrollText } from 'lucide-react'
 import { getProjectTemplate } from '../templates/projectTemplates'
-import type { DetailSelection, FushengProject } from '../types'
+import type { DetailSelection, EntityRelation, FushengProject } from '../types'
 import AvatarBadge from './AvatarBadge'
 
 type Props = {
@@ -8,6 +8,7 @@ type Props = {
   selection: DetailSelection
   title?: string
   sticky?: boolean
+  onRelationClick?: (relation: EntityRelation) => void
 }
 
 const libraryKindLabel = {
@@ -45,7 +46,7 @@ function Field({ label, value }: { label: string; value?: string | number }) {
   )
 }
 
-export default function DetailPanel({ project, selection, title = '案牍档案', sticky = false }: Props) {
+export default function DetailPanel({ project, selection, title = '案牍档案', sticky = false, onRelationClick }: Props) {
   const template = getProjectTemplate(project.templateId, project.category)
   let body = (
     <div className="rounded-lg border border-dashed border-ink-900/15 bg-paper-100/55 p-5 text-sm leading-6 text-ink-500">
@@ -56,6 +57,10 @@ export default function DetailPanel({ project, selection, title = '案牍档案'
   if (selection?.kind === 'entity') {
     const entity = project.entities.find((item) => item.id === selection.id)
     if (entity) {
+      const relatedRelations = project.entityRelations.filter(
+        (r) => r.sourceId === entity.id || r.targetId === entity.id,
+      )
+
       body = (
         <div className="space-y-5">
           <div className="flex items-start gap-3">
@@ -76,6 +81,34 @@ export default function DetailPanel({ project, selection, title = '案牍档案'
             <Field label="人物弧光" value={entity.roleArc} />
             <Field label="简介" value={entity.description} />
           </div>
+          {relatedRelations.length > 0 && onRelationClick ? (
+            <div>
+              <p className="mb-2 text-xs tracking-wide text-ink-500">关联关系</p>
+              <div className="space-y-1.5">
+                {relatedRelations.map((rel) => {
+                  const otherName =
+                    rel.sourceId === entity.id
+                      ? project.entities.find((e) => e.id === rel.targetId)?.name
+                      : project.entities.find((e) => e.id === rel.sourceId)?.name
+                  const direction = rel.sourceId === entity.id ? '→' : '←'
+                  return (
+                    <button
+                      key={rel.id}
+                      type="button"
+                      onClick={() => onRelationClick(rel)}
+                      className="flex w-full items-center gap-2 rounded-lg border border-ink-900/8 bg-paper-50/55 px-3 py-2 text-left text-sm transition hover:border-goldline/40 hover:bg-goldline/5"
+                    >
+                      <Crosshair size={13} className="shrink-0 text-ink-400" />
+                      <span className="text-ink-800">{rel.type}</span>
+                      <span className="ml-auto text-xs text-ink-500">
+                        {direction} {otherName || '未知'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
       )
     }

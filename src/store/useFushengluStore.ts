@@ -65,6 +65,14 @@ type StoreState = {
     position: GraphNodePosition,
   ) => void
   updateEventNodePosition: (projectId: string, eventId: string, position: GraphNodePosition) => void
+  batchUpdateEntityNodePositions: (
+    projectId: string,
+    positions: Record<string, GraphNodePosition>,
+  ) => void
+  batchUpdateEventNodePositions: (
+    projectId: string,
+    positions: Record<string, GraphNodePosition>,
+  ) => void
   addLibraryItem: (
     projectId: string,
     draft: Omit<LibraryItem, 'id' | 'createdAt'>,
@@ -203,19 +211,18 @@ export const useFushengluStore = create<StoreState>()(
         devLogger.event('useFushengluStore', message, details)
       }
 
-      const syncProject = (project: FushengProject) => {
-        void saveProjectToBackend(normalizeProject(project))
-          .then(() => {
-            logState('Backend sync succeeded', { projectId: project.id })
-            set({ backendStatus: 'online' })
+      const syncProject = async (project: FushengProject) => {
+        try {
+          await saveProjectToBackend(normalizeProject(project))
+          logState('Backend sync succeeded', { projectId: project.id })
+          set({ backendStatus: 'online' })
+        } catch (error) {
+          logState('Backend sync failed', {
+            projectId: project.id,
+            message: error instanceof Error ? error.message : String(error),
           })
-          .catch((error) => {
-            logState('Backend sync failed', {
-              projectId: project.id,
-              message: error instanceof Error ? error.message : String(error),
-            })
-            set({ backendStatus: 'offline' })
-          })
+          set({ backendStatus: 'offline' })
+        }
       }
 
       const commitProject = (
@@ -233,7 +240,7 @@ export const useFushengluStore = create<StoreState>()(
           }),
         }))
 
-        if (changedProject) syncProject(changedProject)
+        if (changedProject) void syncProject(changedProject)
       }
 
       return {
@@ -253,7 +260,9 @@ export const useFushengluStore = create<StoreState>()(
               remoteProjectCount: remoteProjects.length,
               mergedProjectCount: projects.length,
             })
-            projects.forEach(syncProject)
+            for (const project of projects) {
+              await syncProject(project)
+            }
           } catch (error) {
             logState('Backend hydration failed', {
               message: error instanceof Error ? error.message : String(error),
@@ -295,7 +304,7 @@ export const useFushengluStore = create<StoreState>()(
             templateId: draft.templateId,
             category: draft.category,
           })
-          syncProject(project)
+          void syncProject(project)
           return id
         },
 
@@ -478,6 +487,26 @@ export const useFushengluStore = create<StoreState>()(
             eventNodePositions: {
               ...project.eventNodePositions,
               [eventId]: position,
+            },
+          }))
+        },
+
+        batchUpdateEntityNodePositions: (projectId, positions) => {
+          commitProject(projectId, (project) => ({
+            ...project,
+            entityNodePositions: {
+              ...project.entityNodePositions,
+              ...positions,
+            },
+          }))
+        },
+
+        batchUpdateEventNodePositions: (projectId, positions) => {
+          commitProject(projectId, (project) => ({
+            ...project,
+            eventNodePositions: {
+              ...project.eventNodePositions,
+              ...positions,
             },
           }))
         },

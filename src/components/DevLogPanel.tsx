@@ -49,6 +49,7 @@ export function DevLogPanel() {
   const [filter, setFilter] = useState<FilterKey>('all')
   const [query, setQuery] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const snapshot = useSyncExternalStore(devLogger.subscribe, getSnapshot, getServerSnapshot)
 
   const newestEntries = useMemo(() => [...snapshot.entries].reverse(), [snapshot.entries])
@@ -68,20 +69,44 @@ export function DevLogPanel() {
     })
   }, [filter, newestEntries, query])
 
+  const selectedEntries = useMemo(
+    () => snapshot.entries.filter((entry) => selectedIds.has(entry.id)),
+    [selectedIds, snapshot.entries],
+  )
   const warningCount = snapshot.entries.filter((entry) => entry.level === 'warn').length
   const errorCount = snapshot.entries.filter((entry) => entry.level === 'error').length
 
-  const copyLogs = async () => {
+  const copyEntries = async (entries: DevLogEntry[], label: string) => {
+    if (entries.length === 0) return
+
     try {
-      await navigator.clipboard.writeText(stringifyLogs(snapshot.entries))
-      devLogger.event('DevLogPanel', 'Copied logs to clipboard', {
-        count: snapshot.entries.length,
+      await navigator.clipboard.writeText(stringifyLogs(entries))
+      devLogger.event('DevLogPanel', `Copied ${label}`, {
+        count: entries.length,
       })
     } catch (error) {
-      devLogger.warn('DevLogPanel', 'Failed to copy logs', {
+      devLogger.warn('DevLogPanel', `Failed to copy ${label}`, {
         message: error instanceof Error ? error.message : String(error),
       })
     }
+  }
+
+  const copyLogs = async () => {
+    await copyEntries(snapshot.entries, 'all logs')
+  }
+
+  const toggleSelected = (entryId: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+
+      if (next.has(entryId)) {
+        next.delete(entryId)
+      } else {
+        next.add(entryId)
+      }
+
+      return next
+    })
   }
 
   const downloadLogs = () => {
@@ -135,7 +160,7 @@ export function DevLogPanel() {
                 type="button"
                 onClick={copyLogs}
                 className="rounded p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                aria-label="Copy logs"
+                aria-label="Copy all logs"
               >
                 <Clipboard className="h-4 w-4" />
               </button>
@@ -149,7 +174,10 @@ export function DevLogPanel() {
               </button>
               <button
                 type="button"
-                onClick={() => devLogger.clear()}
+                onClick={() => {
+                  setSelectedIds(new Set())
+                  devLogger.clear()
+                }}
                 className="rounded p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 aria-label="Clear logs"
               >
@@ -184,6 +212,27 @@ export function DevLogPanel() {
                 </button>
               ))}
             </div>
+            {selectedEntries.length > 0 && (
+              <div className="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+                <span className="font-medium">Selected {selectedEntries.length}</span>
+                <button
+                  type="button"
+                  onClick={() => void copyEntries(selectedEntries, 'selected logs')}
+                  className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:text-white"
+                >
+                  <Clipboard className="h-3.5 w-3.5" />
+                  Copy selected
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="inline-flex items-center gap-1 rounded border border-transparent px-2 py-1 font-medium text-slate-500 hover:bg-white hover:text-slate-900 dark:hover:bg-slate-950 dark:hover:text-white"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Clear selection
+                </button>
+              </div>
+            )}
             <label className="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300">
               <Search className="h-4 w-4 shrink-0" />
               <input
@@ -211,30 +260,52 @@ export function DevLogPanel() {
               <div className="space-y-2">
                 {filteredEntries.map((entry) => {
                   const expanded = expandedId === entry.id
+                  const selected = selectedIds.has(entry.id)
 
                   return (
                     <article
                       key={entry.id}
-                      className={clsx('rounded-md border p-3 text-sm', levelClass[entry.level])}
+                      className={clsx(
+                        'rounded-md border p-3 text-sm',
+                        levelClass[entry.level],
+                        selected && 'ring-2 ring-slate-900/20 dark:ring-white/30',
+                      )}
                     >
-                      <button
-                        type="button"
-                        onClick={() => setExpandedId(expanded ? null : entry.id)}
-                        className="flex w-full items-start justify-between gap-3 text-left"
-                      >
-                        <span className="min-w-0">
-                          <span className="mr-2 font-mono text-xs uppercase">{entry.level}</span>
-                          <span className="font-semibold">{entry.message}</span>
-                          <span className="mt-1 block truncate text-xs opacity-75">
-                            {formatTime(entry.timestamp)} / {entry.category} / {entry.source}
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggleSelected(entry.id)}
+                          className="mt-1 h-4 w-4 shrink-0 rounded border-slate-400 text-slate-900 focus:ring-slate-500"
+                          aria-label={`Select log ${entry.message}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setExpandedId(expanded ? null : entry.id)}
+                          className="flex min-w-0 flex-1 items-start justify-between gap-3 text-left"
+                        >
+                          <span className="min-w-0">
+                            <span className="mr-2 font-mono text-xs uppercase">{entry.level}</span>
+                            <span className="font-semibold">{entry.message}</span>
+                            <span className="mt-1 block truncate text-xs opacity-75">
+                              {formatTime(entry.timestamp)} / {entry.category} / {entry.source}
+                            </span>
                           </span>
-                        </span>
-                        {expanded ? (
-                          <ChevronUp className="h-4 w-4 shrink-0" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 shrink-0" />
-                        )}
-                      </button>
+                          {expanded ? (
+                            <ChevronUp className="h-4 w-4 shrink-0" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 shrink-0" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void copyEntries([entry], 'single log')}
+                          className="rounded p-1.5 opacity-70 hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/10"
+                          aria-label={`Copy log ${entry.message}`}
+                        >
+                          <Clipboard className="h-4 w-4" />
+                        </button>
+                      </div>
                       {expanded && (
                         <pre className="mt-3 max-h-64 overflow-auto rounded bg-black/5 p-3 text-xs leading-relaxed dark:bg-white/10">
                           {JSON.stringify(entry, null, 2)}

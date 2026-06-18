@@ -14,6 +14,8 @@ const edgeStyleSchema = z
   .object({
     lineStyle: z.enum(['solid', 'dashed', 'dotted']).optional(),
     tone: z.enum(['cinnabar', 'jade', 'goldline', 'ink']).optional(),
+    edgeType: z.enum(['straight', 'smoothstep', 'bezier', 'step']).optional(),
+    lineWidth: z.number().min(0.5).max(12).optional(),
     animated: z.boolean().optional(),
   })
   .optional()

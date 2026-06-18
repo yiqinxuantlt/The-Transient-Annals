@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import type { EdgeLineStyle, EdgeTone, EdgeVisualStyle } from '../types'
+import type { EdgeLineStyle, EdgeTone, EdgeType, EdgeVisualStyle } from '../types'
 
 const lineStyles: Array<{ value: EdgeLineStyle; label: string; dash: string }> = [
   { value: 'solid', label: '实线', dash: 'none' },
@@ -14,6 +14,13 @@ const tones: Array<{ value: EdgeTone; label: string; className: string }> = [
   { value: 'ink', label: '墨色', className: 'bg-ink-700' },
 ]
 
+const edgeTypes: Array<{ value: EdgeType; label: string; icon: string }> = [
+  { value: 'straight', label: '直线', icon: '─' },
+  { value: 'smoothstep', label: '折线', icon: '⌐' },
+  { value: 'bezier', label: '曲线', icon: '∼' },
+  { value: 'step', label: '阶梯', icon: '⊏' },
+]
+
 type Props = {
   value?: EdgeVisualStyle
   onChange: (style: EdgeVisualStyle) => void
@@ -23,6 +30,8 @@ export default function EdgeStyleControls({ value, onChange }: Props) {
   const nextValue = {
     lineStyle: value?.lineStyle || 'solid',
     tone: value?.tone || 'cinnabar',
+    edgeType: value?.edgeType || 'smoothstep',
+    lineWidth: value?.lineWidth || 2,
     animated: Boolean(value?.animated),
   } satisfies Required<EdgeVisualStyle>
 
@@ -30,6 +39,7 @@ export default function EdgeStyleControls({ value, onChange }: Props) {
 
   return (
     <div className="grid gap-3">
+      {/* Line style */}
       <div>
         <p className="mb-2 text-xs text-ink-500">线型</p>
         <div className="grid grid-cols-3 gap-2">
@@ -45,13 +55,43 @@ export default function EdgeStyleControls({ value, onChange }: Props) {
                   : 'border-ink-900/10 bg-paper-50/65 text-ink-600 hover:border-goldline/45',
               )}
             >
-              <span className="mx-auto mb-1 block h-px w-8 bg-current" style={{ borderTop: item.dash === 'none' ? undefined : `2px dashed currentColor`, background: item.dash === 'none' ? undefined : 'transparent' }} />
+              <span
+                className="mx-auto mb-1 block h-px w-8"
+                style={{
+                  borderTop: item.dash === 'none' ? '2px solid currentColor' : `2px dashed currentColor`,
+                  background: item.dash === 'none' ? undefined : 'transparent',
+                }}
+              />
               {item.label}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Edge routing type */}
+      <div>
+        <p className="mb-2 text-xs text-ink-500">连线类型</p>
+        <div className="grid grid-cols-4 gap-1.5">
+          {edgeTypes.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => update({ edgeType: item.value })}
+              className={clsx(
+                'flex min-h-9 flex-col items-center justify-center gap-0.5 rounded-lg border text-[11px] transition',
+                nextValue.edgeType === item.value
+                  ? 'border-goldline bg-goldline/12 text-ink-900'
+                  : 'border-ink-900/10 bg-paper-50/65 text-ink-600 hover:border-goldline/45',
+              )}
+            >
+              <span className="text-sm font-mono leading-none">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Color */}
       <div>
         <p className="mb-2 text-xs text-ink-500">颜色</p>
         <div className="grid grid-cols-4 gap-2">
@@ -75,6 +115,24 @@ export default function EdgeStyleControls({ value, onChange }: Props) {
         </div>
       </div>
 
+      {/* Line width */}
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs text-ink-500">线宽</p>
+          <span className="text-xs tabular-nums text-ink-600">{nextValue.lineWidth}px</span>
+        </div>
+        <input
+          type="range"
+          min={1}
+          max={6}
+          step={0.5}
+          value={nextValue.lineWidth}
+          onChange={(event) => update({ lineWidth: Number(event.target.value) })}
+          className="w-full accent-[rgb(var(--goldline))]"
+        />
+      </div>
+
+      {/* Animation toggle */}
       <label className="flex min-h-10 items-center justify-between rounded-lg border border-ink-900/10 bg-paper-50/65 px-3 text-sm text-ink-700">
         <span>流动效果</span>
         <input

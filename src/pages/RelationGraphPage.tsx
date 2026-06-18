@@ -1,23 +1,32 @@
-import { Plus, Trash2, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Crosshair, LayoutGrid, Plus, Trash2, X } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
+import { ReactFlowProvider, useReactFlow } from 'reactflow'
 import DetailPanel from '../components/DetailPanel'
 import EdgeStyleControls from '../components/EdgeStyleControls'
 import GraphCanvas from '../components/GraphCanvas'
+import TimeSlider from '../components/TimeSlider'
 import { useProject } from '../hooks/useProject'
+import { computeEntityLayout } from '../lib/dagreLayout'
 import { useFushengluStore } from '../store/useFushengluStore'
 import { getProjectTemplate } from '../templates/projectTemplates'
-import type { DetailSelection, EntityRelationDraft } from '../types'
+import type { DetailSelection, EntityRelation, EntityRelationDraft } from '../types'
 
-export default function RelationGraphPage() {
+/* ── Inner component (has access to useReactFlow via parent ReactFlowProvider) ── */
+
+function RelationGraphInner() {
   const project = useProject()
   const template = getProjectTemplate(project.templateId, project.category)
   const addRelation = useFushengluStore((state) => state.addEntityRelation)
   const updateRelationStyle = useFushengluStore((state) => state.updateEntityRelationStyle)
   const deleteRelation = useFushengluStore((state) => state.deleteEntityRelation)
   const updateNodePosition = useFushengluStore((state) => state.updateEntityNodePosition)
+  const batchUpdatePositions = useFushengluStore((state) => state.batchUpdateEntityNodePositions)
   const [selection, setSelection] = useState<DetailSelection>(
     project.entities[0] ? { kind: 'entity', id: project.entities[0].id } : null,
   )
+  const [focusNodeId, setFocusNodeId] = useState<string | null>(null)
+  const { fitView, getNodes } = useReactFlow()
+
   const initialRelation = useMemo<EntityRelationDraft>(
     () => ({
       sourceId: project.entities[0]?.id || '',
@@ -35,6 +44,42 @@ export default function RelationGraphPage() {
       ? project.entityRelations.find((relation) => relation.id === selection.id)
       : undefined
 
+  /* ── Time slider: compute year range from project data ── */
+  const { minYear, maxYear, hasYearData } = useMemo(() => {
+    const years: number[] = []
+    for (const e of project.entities) {
+      if (e.startYear != null) years.push(e.startYear)
+      if (e.endYear != null) years.push(e.endYear)
+    }
+    for (const r of project.entityRelations) {
+      if (r.startYear != null) years.push(r.startYear)
+      if (r.endYear != null) years.push(r.endYear)
+    }
+    for (const ev of project.events) {
+      if (ev.startYear != null) years.push(ev.startYear)
+      if (ev.endYear != null) years.push(ev.endYear)
+    }
+    for (const el of project.eventLinks) {
+      if (el.startYear != null) years.push(el.startYear)
+      if (el.endYear != null) years.push(el.endYear)
+    }
+    if (years.length === 0) return { minYear: 0, maxYear: 0, hasYearData: false }
+    return { minYear: Math.min(...years), maxYear: Math.max(...years), hasYearData: true }
+  }, [project.entities, project.entityRelations, project.events, project.eventLinks])
+
+  // null means "show all" (no temporal filtering)
+  const [currentYear, setCurrentYear] = useState<number | null>(null)
+
+  /* Filtered relations for the sidebar list */
+  const visibleRelations = useMemo(() => {
+    if (currentYear == null) return project.entityRelations
+    return project.entityRelations.filter((r) => {
+      if (r.startYear != null && currentYear < r.startYear) return false
+      if (r.endYear != null && currentYear > r.endYear) return false
+      return true
+    })
+  }, [project.entityRelations, currentYear])
+
   const openComposer = (sourceId = initialRelation.sourceId, targetId = initialRelation.targetId) => {
     setDraft((value) => ({
       ...value,
@@ -51,6 +96,42 @@ export default function RelationGraphPage() {
     setDraft(initialRelation)
     setComposerOpen(false)
   }
+
+  /** Clicking a relation in the sidebar focuses one endpoint and fits both into view */
+  const handleRelationClick = useCallback(
+    (relation: EntityRelation) => {
+      setSelection({ kind: 'entityRelation', id: relation.id })
+      setFocusNodeId(relation.sourceId)
+      setTimeout(() => {
+        const allNodes = getNodes()
+        const targetNodes = allNodes.filter(
+          (n) => n.id === relation.sourceId || n.id === relation.targetId,
+        )
+        fitView({
+          nodes: targetNodes.length ? targetNodes : undefined,
+          duration: 800,
+          padding: 0.4,
+        })
+      }, 60)
+    },
+    [fitView, getNodes],
+  )
+
+  /** DAG auto-layout: compute positions with dagre, save all at once, then fitView */
+  const handleAutoLayout = useCallback(() => {
+    const positions = computeEntityLayout(project.entities, project.entityRelations, {
+      rankdir: 'TB',
+      nodesep: 90,
+      ranksep: 130,
+    })
+    batchUpdatePositions(project.id, positions)
+    // Clear focus mode when layout changes
+    setFocusNodeId(null)
+    // Fit view after positions update
+    setTimeout(() => {
+      fitView({ duration: 600, padding: 0.3 })
+    }, 80)
+  }, [project.entities, project.entityRelations, project.id, batchUpdatePositions, fitView])
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -146,6 +227,9 @@ export default function RelationGraphPage() {
             onNodePositionChange={(nodeId, position) =>
               updateNodePosition(project.id, nodeId, position)
             }
+            focusNodeId={focusNodeId}
+            onFocusNodeChange={setFocusNodeId}
+            currentYear={currentYear}
             toolbar={
               <>
                 <button
@@ -156,17 +240,38 @@ export default function RelationGraphPage() {
                   <Plus size={17} />
                   添加关系
                 </button>
+                <button
+                  type="button"
+                  onClick={handleAutoLayout}
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-goldline/30 bg-paper-50/90 px-4 text-sm text-ink-800 shadow-soft backdrop-blur transition hover:bg-paper-50"
+                  title="使用 DAG 算法自动排列节点"
+                >
+                  <LayoutGrid size={17} />
+                  自动整理
+                </button>
                 <span className="hidden min-h-10 items-center rounded-lg border border-ink-900/10 bg-paper-50/80 px-3 text-xs text-ink-600 shadow-soft backdrop-blur md:inline-flex">
-                  拖动节点可保存布局
+                  点击节点聚焦关系 · 拖动势力框移动整组 · 拖动节点可保存布局
                 </span>
               </>
             }
           />
         </div>
+
+        {/* Time Slider — 四维时空探索 */}
+        {hasYearData ? (
+          <div className="mt-4">
+            <TimeSlider
+              minYear={minYear}
+              maxYear={maxYear}
+              currentYear={currentYear}
+              onYearChange={setCurrentYear}
+            />
+          </div>
+        ) : null}
       </section>
 
       <div className="space-y-5">
-        <DetailPanel project={project} selection={selection} />
+        <DetailPanel project={project} selection={selection} onRelationClick={handleRelationClick} />
         {selectedRelation ? (
           <section className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
             <p className="text-xs text-ink-500">连线样式</p>
@@ -182,30 +287,65 @@ export default function RelationGraphPage() {
         <section className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
           <h3 className="font-serif text-xl font-semibold">{template.pages.relationGraph.notesTitle}</h3>
           <div className="mt-4 space-y-3">
-            {project.entityRelations.map((relation) => (
-              <div key={relation.id} className="rounded-lg border border-ink-900/10 bg-paper-100/65 p-3 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelection({ kind: 'entityRelation', id: relation.id })}
-                    className="text-left text-ink-800"
-                  >
-                    {relation.type}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteRelation(project.id, relation.id)}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-cinnabar hover:bg-cinnabar/10"
-                    aria-label="删除关系"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+            {visibleRelations.map((relation) => {
+              const isActive = focusNodeId === relation.sourceId || focusNodeId === relation.targetId
+              return (
+                <div
+                  key={relation.id}
+                  className={[
+                    'rounded-lg border p-3 text-sm transition-all duration-200',
+                    isActive
+                      ? 'border-cinnabar/40 bg-cinnabar/5 shadow-sm'
+                      : 'border-ink-900/10 bg-paper-100/65 hover:border-goldline/30',
+                  ].join(' ')}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleRelationClick(relation)}
+                      className="flex flex-1 items-center gap-2 text-left text-ink-800"
+                    >
+                      <Crosshair
+                        size={14}
+                        className={isActive ? 'text-cinnabar' : 'text-ink-400'}
+                      />
+                      <span>{relation.type}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteRelation(project.id, relation.id)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-cinnabar hover:bg-cinnabar/10"
+                      aria-label="删除关系"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <p className="mt-1 pl-6 text-xs text-ink-500">
+                    {project.entities.find((e) => e.id === relation.sourceId)?.name}
+                    {' → '}
+                    {project.entities.find((e) => e.id === relation.targetId)?.name}
+                  </p>
                 </div>
-              </div>
-            ))}
+              )
+            })}
+            {currentYear != null && visibleRelations.length < project.entityRelations.length ? (
+              <p className="pt-1 text-center text-xs text-ink-400">
+                已隐藏 {project.entityRelations.length - visibleRelations.length} 条当前年份不可见的关系
+              </p>
+            ) : null}
           </div>
         </section>
       </div>
     </div>
+  )
+}
+
+/* ── Exported wrapper with ReactFlowProvider ── */
+
+export default function RelationGraphPage() {
+  return (
+    <ReactFlowProvider>
+      <RelationGraphInner />
+    </ReactFlowProvider>
   )
 }

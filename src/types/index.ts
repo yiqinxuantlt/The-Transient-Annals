@@ -1,6 +1,7 @@
 export type EntityType = 'person' | 'character' | 'organization' | 'place' | 'other'
 export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted'
 export type EdgeTone = 'cinnabar' | 'jade' | 'goldline' | 'ink'
+export type EdgeType = 'straight' | 'smoothstep' | 'bezier' | 'step'
 export type BackendStatus = 'checking' | 'online' | 'offline'
 export type ProjectTemplateId = 'history' | 'fiction'
 
@@ -12,6 +13,8 @@ export type GraphNodePosition = {
 export type EdgeVisualStyle = {
   lineStyle?: EdgeLineStyle
   tone?: EdgeTone
+  edgeType?: EdgeType
+  lineWidth?: number
   animated?: boolean
 }
 
@@ -29,6 +32,10 @@ export type Entity = {
   description?: string
   avatarUrl?: string
   tags: string[]
+  /** 该实体在叙事中活跃/相关的起始年份（负数表示公元前） */
+  startYear?: number
+  /** 该实体在叙事中活跃/相关的结束年份（负数表示公元前） */
+  endYear?: number
 }
 
 export type StoryEvent = {
@@ -42,6 +49,10 @@ export type StoryEvent = {
   description?: string
   relatedEntityIds: string[]
   tags: string[]
+  /** 事件发生的起始年份（负数表示公元前） */
+  startYear?: number
+  /** 事件发生的结束年份（负数表示公元前） */
+  endYear?: number
 }
 
 export type EntityRelation = {
@@ -51,6 +62,10 @@ export type EntityRelation = {
   type: string
   description?: string
   style?: EdgeVisualStyle
+  /** 关系存在的起始年份（负数表示公元前） */
+  startYear?: number
+  /** 关系存在的结束年份（负数表示公元前） */
+  endYear?: number
 }
 
 export type EventLink = {
@@ -60,6 +75,10 @@ export type EventLink = {
   type: string
   description?: string
   style?: EdgeVisualStyle
+  /** 关联的起始年份（负数表示公元前） */
+  startYear?: number
+  /** 关联的结束年份（负数表示公元前） */
+  endYear?: number
 }
 
 export type LibraryItemKind = 'note' | 'quote' | 'source' | 'inspiration'

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Archive, GitBranch, ScrollText, UsersRound } from 'lucide-react'
 import DetailPanel from '../components/DetailPanel'
 import EventTimeline from '../components/EventTimeline'
@@ -12,6 +12,12 @@ export default function TimelinePage() {
   const [selection, setSelection] = useState<DetailSelection>(
     project.events[0] ? { kind: 'event', id: project.events[0].id } : null,
   )
+  const selectEvent = useCallback((id: string) => {
+    setSelection((current) => {
+      if (current?.kind === 'event' && current.id === id) return current
+      return { kind: 'event', id }
+    })
+  }, [])
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -54,8 +60,9 @@ export default function TimelinePage() {
             <EventTimeline
               events={project.events}
               entities={project.entities}
+              eventLinks={project.eventLinks}
               selectedId={selection?.kind === 'event' ? selection.id : undefined}
-              onSelect={(id) => setSelection({ kind: 'event', id })}
+              onSelect={selectEvent}
             />
           </div>
         </div>

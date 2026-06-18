@@ -44,6 +44,7 @@ const entries: DevLogEntry[] = []
 
 let droppedCount = 0
 let initialized = false
+let notifyScheduled = false
 let snapshot: DevLogSnapshot = {
   entries: [],
   meta: {
@@ -123,6 +124,18 @@ const notify = () => {
   listeners.forEach((listener) => listener())
 }
 
+const scheduleNotify = () => {
+  if (notifyScheduled) return
+  notifyScheduled = true
+
+  const flush = () => {
+    notifyScheduled = false
+    notify()
+  }
+
+  window.setTimeout(flush, 0)
+}
+
 const pushEntry = (entry: DevLogEntry) => {
   entries.push(entry)
 
@@ -139,7 +152,7 @@ const pushEntry = (entry: DevLogEntry) => {
     }
   })
 
-  notify()
+  scheduleNotify()
 }
 
 export const devLogger = {
@@ -201,7 +214,7 @@ export const devLogger = {
   clear() {
     entries.splice(0, entries.length)
     droppedCount = 0
-    notify()
+    scheduleNotify()
   },
 
   getSnapshot() {

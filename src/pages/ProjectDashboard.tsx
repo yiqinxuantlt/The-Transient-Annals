@@ -75,6 +75,7 @@ export default function ProjectDashboard() {
               <EventTimeline
                 events={project.events.slice(0, 5)}
                 entities={project.entities}
+                eventLinks={project.eventLinks}
                 selectedId={selection?.kind === 'event' ? selection.id : undefined}
                 onSelect={(id) => setSelection({ kind: 'event', id })}
                 compact

@@ -208,6 +208,8 @@ const historyEntities = [
     motivation: '联合诸侯入关，最终建立新的政治秩序。',
     description: '沛县起兵后逐步扩大势力，在楚汉战争中由弱转强。',
     tags: ['汉军', '开国君主'],
+    startYear: -209,
+    endYear: -195,
   },
   {
     id: 'entity-xiangyu',
@@ -221,6 +223,8 @@ const historyEntities = [
     motivation: '推翻秦制并以诸侯分封重构天下秩序。',
     description: '以巨鹿之战成名，后与刘邦展开长期争衡。',
     tags: ['楚军', '霸王'],
+    startYear: -209,
+    endYear: -202,
   },
   {
     id: 'entity-zhangliang',
@@ -232,6 +236,8 @@ const historyEntities = [
     motivation: '辅佐刘邦取天下，并规避军事与政治风险。',
     description: '在鸿门宴与入关策略中多次发挥关键作用。',
     tags: ['谋臣', '韩国旧族'],
+    startYear: -208,
+    endYear: -186,
   },
   {
     id: 'entity-hanxin',
@@ -244,6 +250,8 @@ const historyEntities = [
     motivation: '以军事功业换取地位与封赏。',
     description: '受萧何举荐后成为汉军主将，改变楚汉战争走向。',
     tags: ['将领', '兵仙'],
+    startYear: -208,
+    endYear: -196,
   },
   {
     id: 'entity-fanzeng',
@@ -256,6 +264,8 @@ const historyEntities = [
     motivation: '维护楚军战略主动，主张尽早剪除刘邦。',
     description: '多次提醒项羽警惕刘邦，但其建议未被充分采纳。',
     tags: ['谋士', '楚军'],
+    startYear: -208,
+    endYear: -204,
   },
   {
     id: 'entity-guanzhong',
@@ -267,6 +277,8 @@ const historyEntities = [
     motivation: '掌握关中意味着掌握人口、粮赋和政治合法性。',
     description: '楚汉争衡的关键空间，也是入关约定与分封争议的焦点。',
     tags: ['地缘', '战略'],
+    startYear: -207,
+    endYear: -202,
   },
 ] satisfies FushengProject['entities']
 
@@ -281,6 +293,8 @@ const historyEvents = [
     description: '项羽破釜沉舟，大败秦军主力，楚军声望急剧上升。',
     relatedEntityIds: ['entity-xiangyu', 'entity-fanzeng'],
     tags: ['战役', '反秦'],
+    startYear: -208,
+    endYear: -207,
   },
   {
     id: 'event-enter-guan',
@@ -292,6 +306,8 @@ const historyEvents = [
     description: '刘邦率先进入关中，并以约法三章争取秦地民心。',
     relatedEntityIds: ['entity-liubang', 'entity-zhangliang', 'entity-guanzhong'],
     tags: ['入关', '民心'],
+    startYear: -207,
+    endYear: -206,
   },
   {
     id: 'event-hongmen',
@@ -303,6 +319,8 @@ const historyEvents = [
     description: '项羽设宴震慑刘邦，范增主张除患，张良与樊哙等人助刘邦脱险。',
     relatedEntityIds: ['entity-liubang', 'entity-xiangyu', 'entity-zhangliang', 'entity-fanzeng'],
     tags: ['危机', '政治博弈'],
+    startYear: -206,
+    endYear: -206,
   },
   {
     id: 'event-hanxin-general',
@@ -314,6 +332,8 @@ const historyEvents = [
     description: '韩信被拜为大将，汉军获得更成熟的战略执行能力。',
     relatedEntityIds: ['entity-liubang', 'entity-hanxin'],
     tags: ['将领', '转折'],
+    startYear: -206,
+    endYear: -205,
   },
   {
     id: 'event-gaixia',
@@ -325,6 +345,8 @@ const historyEvents = [
     description: '汉军合围楚军，项羽败亡，楚汉战争走向终局。',
     relatedEntityIds: ['entity-liubang', 'entity-xiangyu', 'entity-hanxin'],
     tags: ['决战', '终局'],
+    startYear: -202,
+    endYear: -202,
   },
 ] satisfies FushengProject['events']
 
@@ -336,6 +358,8 @@ const historyRelations = [
     type: '君臣 / 谋略辅佐',
     description: '张良在战略判断和危机处置中多次辅佐刘邦。',
     style: { lineStyle: 'solid', tone: 'goldline' },
+    startYear: -208,
+    endYear: -186,
   },
   {
     id: 'relation-liubang-hanxin',
@@ -344,6 +368,8 @@ const historyRelations = [
     type: '君臣 / 军事协作',
     description: '刘邦重用韩信后，汉军军事能力明显提升。',
     style: { lineStyle: 'solid', tone: 'jade', animated: true },
+    startYear: -206,
+    endYear: -196,
   },
   {
     id: 'relation-liubang-xiangyu',
@@ -352,6 +378,8 @@ const historyRelations = [
     type: '对立',
     description: '从反秦盟友转向争夺天下的主要对手。',
     style: { lineStyle: 'dashed', tone: 'cinnabar', animated: true },
+    startYear: -209,
+    endYear: -202,
   },
   {
     id: 'relation-xiangyu-fanzeng',
@@ -360,6 +388,8 @@ const historyRelations = [
     type: '主从 / 谋臣',
     description: '范增为项羽重要谋士，但核心建议常未被采纳。',
     style: { lineStyle: 'dotted', tone: 'ink' },
+    startYear: -208,
+    endYear: -204,
   },
 ] satisfies FushengProject['entityRelations']
 
@@ -371,6 +401,8 @@ const historyEventLinks = [
     type: '背景',
     description: '巨鹿之战削弱秦军主力，为诸侯入关创造局面。',
     style: { lineStyle: 'solid', tone: 'ink' },
+    startYear: -207,
+    endYear: -206,
   },
   {
     id: 'eventlink-enter-hongmen',
@@ -379,6 +411,8 @@ const historyEventLinks = [
     type: '导致',
     description: '刘邦先入关中触发项羽阵营疑惧，成为鸿门宴危机前提。',
     style: { lineStyle: 'solid', tone: 'cinnabar', animated: true },
+    startYear: -206,
+    endYear: -206,
   },
   {
     id: 'eventlink-hanxin-gaixia',
@@ -387,6 +421,8 @@ const historyEventLinks = [
     type: '奠定基础',
     description: '韩信的军事行动与合围策略为垓下终局奠定条件。',
     style: { lineStyle: 'solid', tone: 'jade', animated: true },
+    startYear: -205,
+    endYear: -202,
   },
 ] satisfies FushengProject['eventLinks']
 
