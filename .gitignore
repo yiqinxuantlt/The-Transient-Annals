@@ -16,6 +16,7 @@ server/data/*.pid
 server/data/*.tmp
 server/data/*.corrupt-*
 *.local
+.superpowers/
 
 # Editor directories and files
 .vscode/*
