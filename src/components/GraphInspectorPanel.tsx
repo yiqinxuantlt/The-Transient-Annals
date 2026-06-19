@@ -12,10 +12,10 @@ type Props = {
 }
 
 const tabs: Array<{ value: InspectorTab; label: string }> = [
-  { value: 'detail', label: '档案详情' },
+  { value: 'detail', label: '详情' },
   { value: 'evidence', label: '证据链' },
-  { value: 'style', label: '关系样式' },
-  { value: 'notes', label: '分析笔记' },
+  { value: 'style', label: '样式' },
+  { value: 'notes', label: '分析札记' },
 ]
 
 export default function GraphInspectorPanel({
@@ -34,18 +34,18 @@ export default function GraphInspectorPanel({
   }[activeTab]
 
   return (
-    <aside className="flex h-full min-h-0 flex-col rounded-lg border border-ink-900/10 bg-paper-50 p-4 shadow-soft">
-      <div className="grid grid-cols-2 gap-2">
+    <aside className="archive-card paper-grain flex h-full min-h-0 flex-col rounded-lg border border-goldline/25 bg-paper-50/75 p-4 shadow-soft">
+      <div className="grid grid-cols-2 gap-1 rounded-lg border border-goldline/30 bg-paper-50/90 p-1 shadow-soft backdrop-blur">
         {tabs.map((tab) => (
           <button
             key={tab.value}
             type="button"
             onClick={() => onTabChange(tab.value)}
             className={[
-              'min-h-9 rounded-lg border px-2 text-xs transition',
+              'min-h-9 rounded-md px-2 text-xs transition',
               activeTab === tab.value
-                ? 'border-goldline bg-goldline/15 text-ink-900'
-                : 'border-ink-900/10 bg-paper-50/70 text-ink-600 hover:border-goldline/40',
+                ? 'bg-ink-900 text-paper-50 shadow-sm'
+                : 'text-ink-600 hover:bg-goldline/10 hover:text-ink-900',
             ].join(' ')}
             aria-pressed={activeTab === tab.value}
           >

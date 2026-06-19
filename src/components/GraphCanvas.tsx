@@ -96,11 +96,11 @@ const EntityGraphNode = memo(function EntityGraphNode({ data, selected }: NodePr
   return (
     <div
       className={[
-        'min-w-[196px] rounded-lg border bg-paper-50/95 p-3 text-left text-ink-900 shadow-soft backdrop-blur-sm transition-all duration-300',
-        selected ? 'border-cinnabar/60 ring-2 ring-cinnabar/15' : 'border-goldline/35',
+        'archive-card paper-grain min-w-[196px] rounded-lg border border-goldline/25 bg-paper-50 p-3 text-left text-ink-900 shadow-soft backdrop-blur-sm transition-all duration-300',
+        selected ? 'border-cinnabar/55 ring-2 ring-cinnabar/20 shadow-archive' : '',
         compact ? 'min-w-[154px] p-2' : '',
       ].join(' ')}
-      style={{ opacity: dimmed ? 0.14 : 1 }}
+      style={{ opacity: dimmed ? 0.14 : 1, overflow: 'visible' }}
     >
       <Handle type="target" position={Position.Left} className="!h-2.5 !w-2.5" />
       <Handle type="source" position={Position.Right} className="!h-2.5 !w-2.5" />
@@ -137,11 +137,11 @@ const EventGraphNode = memo(function EventGraphNode({ data, selected }: NodeProp
   return (
     <div
       className={[
-        'min-w-[210px] rounded-lg border bg-paper-50/95 p-4 text-left text-ink-900 shadow-soft backdrop-blur-sm transition-all duration-300',
-        selected ? 'border-jade/70 ring-2 ring-jade/15' : 'border-cinnabar/30',
+        'archive-card paper-grain min-w-[210px] rounded-lg border border-goldline/25 bg-paper-50 p-4 text-left text-ink-900 shadow-soft backdrop-blur-sm transition-all duration-300',
+        selected ? 'border-cinnabar/55 ring-2 ring-cinnabar/20 shadow-archive' : '',
         compact ? 'min-w-[166px] p-3' : '',
       ].join(' ')}
-      style={{ opacity: dimmed ? 0.14 : 1 }}
+      style={{ opacity: dimmed ? 0.14 : 1, overflow: 'visible' }}
     >
       <Handle type="target" position={Position.Left} className="!h-2.5 !w-2.5" />
       <Handle type="source" position={Position.Right} className="!h-2.5 !w-2.5" />
@@ -469,7 +469,7 @@ export default function GraphCanvas({
 
   return (
     <div
-      className="relative h-full min-h-[360px] overflow-hidden rounded-lg border border-goldline/25 shadow-soft"
+      className="archive-card paper-grain relative h-full min-h-[360px] overflow-hidden rounded-lg border border-goldline/25 shadow-soft"
       style={{
         background:
           'radial-gradient(circle at 18% 18%, rgb(var(--goldline) / 0.12), transparent 26%), linear-gradient(135deg, rgb(var(--paper-50) / 0.96), rgb(var(--paper-100) / 0.9))',
@@ -482,7 +482,7 @@ export default function GraphCanvas({
       ) : null}
       {!visibleGraph.nodes.length ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
-          <div className="max-w-sm rounded-lg border border-dashed border-ink-900/15 bg-paper-50/92 p-5 text-center shadow-soft backdrop-blur">
+          <div className="archive-card paper-grain max-w-sm rounded-lg border border-dashed border-goldline/25 bg-paper-50/92 p-5 text-center shadow-soft backdrop-blur">
             <h3 className="font-serif text-xl font-semibold">{emptyTitle || '暂无图谱内容'}</h3>
             <p className="mt-2 text-sm leading-6 text-ink-500">
               {emptyDescription || '添加节点或清空筛选后，图谱会显示在这里。'}

@@ -363,14 +363,17 @@ export default function GraphWorkbench({
       </button>
     </div>
   ) : (
-    <p className="rounded-lg border border-dashed border-ink-900/15 bg-paper-100/55 p-4 text-sm leading-6 text-ink-500">
+    <p className="archive-card paper-grain rounded-lg border border-dashed border-goldline/25 bg-paper-50/65 p-4 text-sm leading-6 text-ink-500">
       选择一条连接后可以调整线型、颜色、线宽和流动效果。
     </p>
   )
   const notesPanel = (
     <div className="space-y-3">
       {savedNotes.map((note) => (
-        <div key={note.id} className="rounded-lg border border-ink-900/10 bg-paper-100/65 p-3">
+        <div
+          key={note.id}
+          className="archive-card paper-grain rounded-lg border border-goldline/20 bg-paper-50/70 p-3"
+        >
           <button type="button" onClick={() => openNote(note)} className="block w-full text-left text-sm">
             <strong>{note.title}</strong>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-ink-500">{note.summary}</p>
@@ -380,11 +383,11 @@ export default function GraphWorkbench({
             onClick={() => onDeleteAnalysisNote(note.id)}
             className="mt-2 text-xs text-cinnabar hover:underline"
           >
-            删除笔记
+            删除札记
           </button>
         </div>
       ))}
-      {!savedNotes.length ? <p className="text-sm text-ink-500">还没有保存的分析笔记。</p> : null}
+      {!savedNotes.length ? <p className="text-sm text-ink-500">还没有保存的分析札记。</p> : null}
     </div>
   )
 
@@ -403,7 +406,7 @@ export default function GraphWorkbench({
         </div>
       ) : null}
 
-      <section className="relative min-h-[calc(100dvh-9rem)] rounded-lg border border-ink-900/10 bg-paper-50 p-4 shadow-soft">
+      <section className="archive-card paper-grain relative min-h-[calc(100dvh-9rem)] rounded-lg border border-goldline/25 bg-paper-50/75 p-4 shadow-archive">
         <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="text-sm text-ink-500">{eyebrow}</p>

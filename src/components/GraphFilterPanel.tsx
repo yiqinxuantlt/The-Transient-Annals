@@ -37,8 +37,8 @@ function FilterGroup({
             className={[
               'min-h-8 rounded-full border px-3 text-xs transition',
               selected.includes(value)
-                ? 'border-goldline bg-goldline/15 text-ink-900'
-                : 'border-ink-900/10 bg-paper-50/70 text-ink-600 hover:border-goldline/40',
+                ? 'border-goldline bg-goldline/15 text-ink-900 shadow-sm'
+                : 'border-goldline/20 bg-paper-50/75 text-ink-600 hover:border-goldline/45 hover:bg-goldline/5',
             ].join(' ')}
             aria-pressed={selected.includes(value)}
           >
@@ -54,10 +54,10 @@ export default function GraphFilterPanel({ filters, options, onChange, onClear }
   const activeCount = countActiveFilters(filters)
 
   return (
-    <aside className="flex h-full min-h-0 flex-col rounded-lg border border-ink-900/10 bg-paper-50 p-4 shadow-soft">
+    <aside className="archive-card paper-grain flex h-full min-h-0 flex-col rounded-lg border border-goldline/25 bg-paper-50/75 p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs text-ink-500">Filters</p>
+          <p className="text-xs text-ink-500">筛选</p>
           <h3 className="font-serif text-xl font-semibold">筛选与图层</h3>
         </div>
         {activeCount ? (
@@ -67,7 +67,7 @@ export default function GraphFilterPanel({ filters, options, onChange, onClear }
         ) : null}
       </div>
 
-      <label className="mt-4 flex min-h-10 items-center gap-2 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm text-ink-500 focus-within:border-goldline">
+      <label className="archive-input mt-4 flex w-full items-center gap-2 text-sm text-ink-500 focus-within:border-goldline">
         <Search size={15} />
         <input
           value={filters.query}
@@ -138,7 +138,7 @@ export default function GraphFilterPanel({ filters, options, onChange, onClear }
         type="button"
         onClick={onClear}
         disabled={!activeCount}
-        className="mt-4 min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm text-ink-700 transition hover:bg-paper-50 disabled:cursor-not-allowed disabled:opacity-45"
+        className="mt-4 min-h-10 rounded-lg border border-goldline/25 bg-paper-50/80 px-3 text-sm text-ink-700 shadow-sm transition hover:border-goldline/45 hover:bg-goldline/5 disabled:cursor-not-allowed disabled:opacity-45"
       >
         清空筛选
       </button>

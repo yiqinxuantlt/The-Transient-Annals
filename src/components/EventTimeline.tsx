@@ -88,7 +88,7 @@ function TimelineEventCard({
       }}
       aria-pressed={selected}
       className={clsx(
-        'archive-event-card mountain-wash group relative block w-full overflow-hidden rounded-lg border p-5 text-left shadow-soft outline-none transition duration-200 hover:-translate-y-0.5 hover:border-goldline/50 hover:shadow-archive focus-visible:ring-2 focus-visible:ring-goldline/45',
+        'archive-card paper-grain archive-event-card mountain-wash group relative block w-full overflow-hidden rounded-lg border p-5 text-left shadow-soft outline-none transition duration-200 hover:-translate-y-0.5 hover:border-goldline/50 hover:shadow-archive focus-visible:ring-2 focus-visible:ring-goldline/45',
         selected
           ? 'border-goldline bg-gradient-to-br from-paper-50 to-goldline/10 ring-2 ring-goldline/18'
           : 'border-ink-900/10',
@@ -168,7 +168,7 @@ function TimelineEventCard({
 
 function EmptyTimeline() {
   return (
-    <div className="rounded-lg border border-dashed border-ink-900/20 bg-paper-50/70 p-8 text-center text-sm text-ink-500">
+    <div className="archive-card paper-grain rounded-lg border border-dashed border-goldline/25 bg-paper-50/70 p-8 text-center text-sm text-ink-500">
       还没有事件。新增事件后，时间轴会在这里展开。
     </div>
   )
