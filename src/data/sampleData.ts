@@ -507,7 +507,7 @@ export const createFictionSampleProject = (
   category: ProjectCategory = 'novel',
   subtitle = '用一条身份谜团线串起人物、事件、关系与伏笔回收。',
 ): FushengProject => ({
-  schemaVersion: 3,
+  schemaVersion: 5,
   id,
   title,
   subtitle,
@@ -525,6 +525,7 @@ export const createFictionSampleProject = (
   libraryItems: fictionLibraryItems.map((item) => ({ ...item, tags: [...item.tags] })),
   entityNodePositions: { ...fictionNodePositions },
   eventNodePositions: { ...fictionEventNodePositions },
+  analysisNotes: [],
 })
 
 export const createHistorySampleProject = (
@@ -533,7 +534,7 @@ export const createHistorySampleProject = (
   category: ProjectCategory = 'history',
   subtitle = '以秦末楚汉为背景，整理人物联盟、战役节点与政治转折。',
 ): FushengProject => ({
-  schemaVersion: 3,
+  schemaVersion: 5,
   id,
   title,
   subtitle,
@@ -551,6 +552,7 @@ export const createHistorySampleProject = (
   libraryItems: historyLibraryItems.map((item) => ({ ...item, tags: [...item.tags] })),
   entityNodePositions: { ...historyNodePositions },
   eventNodePositions: { ...historyEventNodePositions },
+  analysisNotes: [],
 })
 
 export const createSampleProject = (

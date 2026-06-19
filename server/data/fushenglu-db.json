@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 5,
   "projects": [
     {
-      "schemaVersion": 3,
+      "schemaVersion": 5,
       "id": "project-zizhi-tongjian",
       "title": "????",
       "subtitle": "?????????????????",
@@ -14,33 +14,35 @@
       "entityRelations": [],
       "eventLinks": [],
       "libraryItems": [],
+      "analysisNotes": [],
       "entityNodePositions": {},
       "eventNodePositions": {}
     },
     {
-      "schemaVersion": 3,
+      "schemaVersion": 5,
       "id": "project-a200e794-60ec-46cc-b646-b5b55eb09bf5",
       "title": "资治通鉴",
       "subtitle": "整理资治通鉴中记述的历史",
       "templateId": "history",
       "category": "history",
-      "updatedAt": "2026-06-18T05:53:02.749Z",
+      "updatedAt": "2026-06-19T02:41:31.409Z",
       "entities": [],
       "events": [],
       "entityRelations": [],
       "eventLinks": [],
       "libraryItems": [],
+      "analysisNotes": [],
       "entityNodePositions": {},
       "eventNodePositions": {}
     },
     {
-      "schemaVersion": 3,
+      "schemaVersion": 5,
       "id": "project-chuhan",
       "title": "楚汉旧闻",
       "subtitle": "以秦末楚汉为背景，整理人物联盟、战役节点与政治转折。",
       "templateId": "history",
       "category": "history",
-      "updatedAt": "2026-06-18T09:04:00.796Z",
+      "updatedAt": "2026-06-19T02:44:03.044Z",
       "entities": [
         {
           "id": "entity-liubang",
@@ -233,7 +235,10 @@
           "description": "张良在战略判断和危机处置中多次辅佐刘邦。",
           "style": {
             "lineStyle": "solid",
-            "tone": "goldline"
+            "tone": "goldline",
+            "edgeType": "smoothstep",
+            "lineWidth": 2,
+            "animated": false
           }
         },
         {
@@ -255,8 +260,10 @@
           "type": "对立",
           "description": "从反秦盟友转向争夺天下的主要对手。",
           "style": {
-            "lineStyle": "dashed",
+            "lineStyle": "solid",
             "tone": "cinnabar",
+            "edgeType": "smoothstep",
+            "lineWidth": 2.5,
             "animated": true
           }
         },
@@ -333,30 +340,31 @@
           "createdAt": "2026-06-18T09:04:00.795Z"
         }
       ],
+      "analysisNotes": [],
       "entityNodePositions": {
         "entity-liubang": {
           "x": 40,
-          "y": 150
+          "y": 265
         },
         "entity-xiangyu": {
-          "x": 690,
-          "y": 150
-        },
-        "entity-zhangliang": {
-          "x": 345,
+          "x": 410,
           "y": 40
         },
+        "entity-zhangliang": {
+          "x": 410,
+          "y": 490
+        },
         "entity-hanxin": {
-          "x": 355,
-          "y": 300
+          "x": 410,
+          "y": 265
         },
         "entity-fanzeng": {
-          "x": 1010,
-          "y": 110
+          "x": 780,
+          "y": 40
         },
         "entity-guanzhong": {
-          "x": 680,
-          "y": 350
+          "x": 40,
+          "y": 490
         }
       },
       "eventNodePositions": {
@@ -383,13 +391,13 @@
       }
     },
     {
-      "schemaVersion": 3,
+      "schemaVersion": 5,
       "id": "project-starshore",
       "title": "星海边境设定",
       "subtitle": "用于组织游戏世界观中的势力、地点、主线事件与悬念回收。",
       "templateId": "fiction",
       "category": "worldbuilding",
-      "updatedAt": "2026-06-18T09:05:43.438Z",
+      "updatedAt": "2026-06-19T02:41:31.369Z",
       "entities": [
         {
           "id": "entity-main",
@@ -679,6 +687,7 @@
           "createdAt": "2026-06-18T09:04:00.795Z"
         }
       ],
+      "analysisNotes": [],
       "entityNodePositions": {
         "entity-main": {
           "x": 108,
@@ -729,13 +738,13 @@
       }
     },
     {
-      "schemaVersion": 3,
+      "schemaVersion": 5,
       "id": "project-fushenglu-demo",
       "title": "浮生录示例案卷",
       "subtitle": "用一条身份谜团线串起人物、事件、关系与伏笔回收。",
       "templateId": "fiction",
       "category": "novel",
-      "updatedAt": "2026-06-18T09:04:00.795Z",
+      "updatedAt": "2026-06-19T02:41:31.392Z",
       "entities": [
         {
           "id": "entity-main",
@@ -1025,6 +1034,7 @@
           "createdAt": "2026-06-18T09:04:00.795Z"
         }
       ],
+      "analysisNotes": [],
       "entityNodePositions": {
         "entity-main": {
           "x": 40,

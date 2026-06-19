@@ -92,6 +92,23 @@ export type LibraryItem = {
   createdAt: string
 }
 
+export type GraphMode = 'entities' | 'events'
+
+export type AnalysisNote = {
+  id: string
+  title: string
+  graphMode: GraphMode
+  startId?: string
+  targetId?: string
+  nodeIds: string[]
+  edgeIds: string[]
+  summary: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type AnalysisNoteDraft = Omit<AnalysisNote, 'id' | 'createdAt' | 'updatedAt'>
+
 export type ProjectCategory = 'history' | 'novel' | 'script' | 'worldbuilding' | 'research'
 export type ThemeMode = 'light' | 'dark'
 
@@ -108,6 +125,7 @@ export type FushengProject = {
   entityRelations: EntityRelation[]
   eventLinks: EventLink[]
   libraryItems: LibraryItem[]
+  analysisNotes: AnalysisNote[]
   entityNodePositions: Record<string, GraphNodePosition>
   eventNodePositions: Record<string, GraphNodePosition>
 }

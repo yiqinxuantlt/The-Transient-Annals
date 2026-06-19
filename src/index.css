@@ -244,7 +244,7 @@ body::before {
     0 0 0 5px rgb(var(--paper-100) / 0.7),
     0 2px 10px rgb(var(--shadow-soft) / 0.12);
   cursor: pointer;
-  transition: all 220ms ease;
+  transition: all 140ms ease;
   flex-shrink: 0;
   margin-top: 1.15rem;
   position: relative;
@@ -275,7 +275,7 @@ body::before {
   height: 6px;
   border-radius: 50%;
   background: rgb(var(--goldline));
-  transition: all 220ms ease;
+  transition: all 140ms ease;
 }
 
 .timeline-dot-selected .timeline-dot-inner {
@@ -578,6 +578,29 @@ button {
   background: rgba(129, 116, 100, 0.34);
 }
 
+.graph-tool-button {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(var(--goldline) / 0.3);
+  background: rgb(var(--paper-50) / 0.9);
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  color: rgb(var(--ink-800));
+  box-shadow: 0 8px 24px rgb(var(--shadow-soft) / 0.08);
+  backdrop-filter: blur(10px);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.graph-tool-button:hover {
+  border-color: rgb(var(--goldline) / 0.5);
+  background: rgb(var(--paper-50));
+}
+
 .react-flow__attribution {
   display: none;
 }
@@ -610,17 +633,17 @@ button {
   transition:
     stroke 160ms ease,
     stroke-width 160ms ease,
-    opacity 300ms ease;
+    opacity 180ms ease;
 }
 
 /* Focus mode: smooth opacity transition on edges */
 .react-flow__edge {
-  transition: opacity 300ms ease;
+  transition: opacity 180ms ease;
 }
 
 /* Focus mode: smooth transition on node wrappers */
 .react-flow__node {
-  transition: opacity 300ms ease;
+  transition: opacity 180ms ease;
 }
 
 /* Faction group nodes: sit behind other nodes */

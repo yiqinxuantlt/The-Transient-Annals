@@ -8,6 +8,7 @@ type Props = {
   selection: DetailSelection
   title?: string
   sticky?: boolean
+  compactChrome?: boolean
   onRelationClick?: (relation: EntityRelation) => void
 }
 
@@ -51,6 +52,7 @@ export default function DetailPanel({
   selection,
   title = '案前档案',
   sticky = false,
+  compactChrome = false,
   onRelationClick,
 }: Props) {
   const template = getProjectTemplate(project.templateId, project.category)
@@ -225,6 +227,10 @@ export default function DetailPanel({
         </div>
       )
     }
+  }
+
+  if (compactChrome) {
+    return <div className="space-y-4">{body}</div>
   }
 
   return (

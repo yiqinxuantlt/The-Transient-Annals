@@ -1,10 +1,17 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { RouterProvider } from 'react-router-dom'
-import { DevLogPanel } from './components/DevLogPanel'
 import { router } from './routes/router'
 import { useFushengluStore } from './store/useFushengluStore'
 
 let backendHydrationStarted = false
+
+const DevLogPanel = import.meta.env.DEV
+  ? lazy(() =>
+      import('./components/DevLogPanel').then((module) => ({
+        default: module.DevLogPanel,
+      })),
+    )
+  : null
 
 function App() {
   const theme = useFushengluStore((state) => state.theme)
@@ -23,7 +30,11 @@ function App() {
   return (
     <>
       <RouterProvider router={router} />
-      {import.meta.env.DEV ? <DevLogPanel /> : null}
+      {DevLogPanel ? (
+        <Suspense fallback={null}>
+          <DevLogPanel />
+        </Suspense>
+      ) : null}
     </>
   )
 }

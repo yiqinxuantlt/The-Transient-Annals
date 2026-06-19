@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { createSampleProject } from '../../src/data/sampleData.ts'
 import type { EdgeVisualStyle, GraphNodePosition } from '../../src/types/index.ts'
 import { normalizeProject, SCHEMA_VERSION } from './schema.ts'
-import { getDatabasePath, readDatabase, saveDatabase } from './storage.ts'
+import { databaseStorage, getDatabasePath, readDatabase, updateDatabase } from './storage.ts'
 
 const app = express()
 const port = Number(process.env.FUSHENGLU_API_PORT || 4177)
@@ -39,17 +39,23 @@ async function updateProject(
   projectId: string,
   updater: (project: ReturnType<typeof normalizeProject>) => ReturnType<typeof normalizeProject>,
 ) {
-  const database = await readDatabase()
-  const index = database.projects.findIndex((project) => project.id === projectId)
+  let nextProject: ReturnType<typeof normalizeProject> | null = null
 
-  if (index < 0) return null
+  await updateDatabase((database) => {
+    const index = database.projects.findIndex((project) => project.id === projectId)
 
-  const nextProject = normalizeProject({
-    ...updater(database.projects[index]),
-    updatedAt: new Date().toISOString(),
+    if (index < 0) return database
+
+    nextProject = normalizeProject({
+      ...updater(database.projects[index]),
+      updatedAt: new Date().toISOString(),
+    })
+
+    const projects = [...database.projects]
+    projects[index] = nextProject
+    return { ...database, projects }
   })
-  database.projects[index] = nextProject
-  await saveDatabase(database)
+
   return nextProject
 }
 
@@ -58,6 +64,7 @@ app.get('/api/health', (_request, response) => {
     ok: true,
     name: 'fushenglu-api',
     schemaVersion: SCHEMA_VERSION,
+    storageKind: databaseStorage.kind,
     storage: getDatabasePath(),
   })
 })
@@ -89,19 +96,26 @@ app.get(
 app.post(
   '/api/projects',
   asyncRoute(async (request, response) => {
-    const database = await readDatabase()
     const project = normalizeProject({
       ...request.body,
       updatedAt: new Date().toISOString(),
     })
+    let alreadyExists = false
 
-    if (database.projects.some((item) => item.id === project.id)) {
+    await updateDatabase((database) => {
+      if (database.projects.some((item) => item.id === project.id)) {
+        alreadyExists = true
+        return database
+      }
+
+      return { ...database, projects: [project, ...database.projects] }
+    })
+
+    if (alreadyExists) {
       response.status(409).json({ error: 'Project already exists' })
       return
     }
 
-    database.projects.unshift(project)
-    await saveDatabase(database)
     response.status(201).json({ project })
   }),
 )
@@ -109,21 +123,26 @@ app.post(
 app.put(
   '/api/projects/:projectId',
   asyncRoute(async (request, response) => {
-    const database = await readDatabase()
     const projectId = routeParam(request.params.projectId)
-    const project = normalizeProject({
+    let project = normalizeProject({
       ...request.body,
       id: projectId,
     })
-    const index = database.projects.findIndex((item) => item.id === project.id)
 
-    if (index >= 0) {
-      database.projects[index] = project
-    } else {
-      database.projects.unshift(project)
-    }
+    await updateDatabase((database) => {
+      const projects = [...database.projects]
+      const index = projects.findIndex((item) => item.id === project.id)
+      project = normalizeProject({ ...project, updatedAt: new Date().toISOString() })
 
-    await saveDatabase(database)
+      if (index >= 0) {
+        projects[index] = project
+      } else {
+        projects.unshift(project)
+      }
+
+      return { ...database, projects }
+    })
+
     response.json({ project })
   }),
 )
@@ -131,16 +150,20 @@ app.put(
 app.delete(
   '/api/projects/:projectId',
   asyncRoute(async (request, response) => {
-    const database = await readDatabase()
     const projectId = routeParam(request.params.projectId)
-    const nextProjects = database.projects.filter((project) => project.id !== projectId)
+    let deleted = false
 
-    if (nextProjects.length === database.projects.length) {
+    await updateDatabase((database) => {
+      const nextProjects = database.projects.filter((project) => project.id !== projectId)
+      deleted = nextProjects.length !== database.projects.length
+      return deleted ? { ...database, projects: nextProjects } : database
+    })
+
+    if (!deleted) {
       response.status(404).json({ error: 'Project not found' })
       return
     }
 
-    await saveDatabase({ ...database, projects: nextProjects })
     response.json({ ok: true })
   }),
 )

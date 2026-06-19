@@ -1,14 +1,20 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { createProjectFromTemplate, createSampleProject, sampleProjects } from '../data/sampleData'
-import { inferTemplateId } from '../templates/projectTemplates'
 import {
   deleteProjectFromBackend,
   fetchProjectsFromBackend,
   saveProjectToBackend,
 } from '../lib/fushengluApi'
 import { devLogger } from '../lib/devLogger'
+import {
+  FUSHENGLU_SCHEMA_VERSION,
+  inferNormalizedTemplateId,
+  isLegacyBrokenProject,
+  normalizeProjectForStorage,
+} from '../shared/projectNormalization'
 import type {
+  AnalysisNoteDraft,
   BackendStatus,
   EdgeVisualStyle,
   EntityDraft,
@@ -78,13 +84,15 @@ type StoreState = {
     draft: Omit<LibraryItem, 'id' | 'createdAt'>,
   ) => string
   deleteLibraryItem: (projectId: string, itemId: string) => void
+  addAnalysisNote: (note: AnalysisNoteDraft) => string
+  updateAnalysisNote: (id: string, note: Partial<AnalysisNoteDraft>) => void
+  deleteAnalysisNote: (id: string) => void
   replaceProjectData: (projectId: string, importedProject: Partial<FushengProject>) => void
   restoreSampleData: (projectId: string) => void
   clearProjectData: (projectId: string) => void
 }
 
-const SCHEMA_VERSION = 4
-const LEGACY_BROKEN_PROJECT_ID = 'project-zizhi-tongjian'
+export const CLIENT_SCHEMA_VERSION = FUSHENGLU_SCHEMA_VERSION
 
 const now = () => new Date().toISOString()
 
@@ -101,78 +109,19 @@ const touchProject = (project: FushengProject): FushengProject => ({
   updatedAt: now(),
 })
 
-const normalizePositionMap = (
-  positions: FushengProject['entityNodePositions'] | FushengProject['eventNodePositions'] | undefined,
-) => {
-  if (!positions || typeof positions !== 'object') return {}
-
-  return Object.fromEntries(
-    Object.entries(positions)
-      .filter(([, position]) => Number.isFinite(position?.x) && Number.isFinite(position?.y))
-      .map(([id, position]) => [id, { x: position.x, y: position.y }]),
-  )
-}
-
-const normalizeStyle = (style?: EdgeVisualStyle): EdgeVisualStyle | undefined => {
-  if (!style) return undefined
-
-  return {
-    lineStyle: style.lineStyle,
-    tone: style.tone,
-    animated: style.animated,
-  }
-}
-
-const normalizeProject = (project: FushengProject): FushengProject => ({
-  ...project,
-  schemaVersion: project.schemaVersion || SCHEMA_VERSION,
-  templateId: inferTemplateId(project.templateId, project.category),
-  entities: Array.isArray(project.entities)
-    ? project.entities.map((entity) => ({ ...entity, tags: [...(entity.tags || [])] }))
-    : [],
-  events: Array.isArray(project.events)
-    ? project.events.map((event) => ({
-        ...event,
-        relatedEntityIds: [...(event.relatedEntityIds || [])],
-        tags: [...(event.tags || [])],
-      }))
-    : [],
-  entityRelations: Array.isArray(project.entityRelations)
-    ? project.entityRelations.map((relation) => ({
-        ...relation,
-        style: normalizeStyle(relation.style),
-      }))
-    : [],
-  eventLinks: Array.isArray(project.eventLinks)
-    ? project.eventLinks.map((link) => ({
-        ...link,
-        style: normalizeStyle(link.style),
-      }))
-    : [],
-  libraryItems: Array.isArray(project.libraryItems)
-    ? project.libraryItems.map((item) => ({ ...item, tags: [...(item.tags || [])] }))
-    : [],
-  entityNodePositions: normalizePositionMap(project.entityNodePositions),
-  eventNodePositions: normalizePositionMap(project.eventNodePositions),
-})
-
-const isLegacyBrokenProject = (project: FushengProject) =>
-  project.id === LEGACY_BROKEN_PROJECT_ID &&
-  (project.title.includes('?') || project.subtitle.includes('?'))
-
 const normalizeProjects = (projects?: FushengProject[]) =>
   Array.isArray(projects) && projects.length
-    ? projects.map(normalizeProject).filter((project) => !isLegacyBrokenProject(project))
-    : sampleProjects.map(normalizeProject)
+    ? projects.map(normalizeProjectForStorage).filter((project) => !isLegacyBrokenProject(project))
+    : sampleProjects.map(normalizeProjectForStorage)
 
 const mergeProjects = (localProjects: FushengProject[], remoteProjects: FushengProject[]) => {
   const merged = new Map<string, FushengProject>()
 
   remoteProjects
-    .map(normalizeProject)
+    .map(normalizeProjectForStorage)
     .filter((project) => !isLegacyBrokenProject(project))
     .forEach((project) => merged.set(project.id, project))
-  localProjects.map(normalizeProject).forEach((project) => {
+  localProjects.map(normalizeProjectForStorage).forEach((project) => {
     if (isLegacyBrokenProject(project)) return
     const remoteProject = merged.get(project.id)
     if (!remoteProject || new Date(project.updatedAt).getTime() >= new Date(remoteProject.updatedAt).getTime()) {
@@ -189,12 +138,15 @@ const cleanImportedProject = (
   current: FushengProject,
   importedProject: Partial<FushengProject>,
 ): FushengProject =>
-  normalizeProject({
+  normalizeProjectForStorage({
     ...current,
     title: importedProject.title || current.title,
     subtitle: importedProject.subtitle || current.subtitle,
     category: importedProject.category || current.category,
-    templateId: inferTemplateId(importedProject.templateId, importedProject.category || current.category),
+    templateId: inferNormalizedTemplateId(
+      importedProject.templateId,
+      importedProject.category || current.category,
+    ),
     entities: Array.isArray(importedProject.entities) ? importedProject.entities : [],
     events: Array.isArray(importedProject.events) ? importedProject.events : [],
     entityRelations: Array.isArray(importedProject.entityRelations)
@@ -202,12 +154,22 @@ const cleanImportedProject = (
       : [],
     eventLinks: Array.isArray(importedProject.eventLinks) ? importedProject.eventLinks : [],
     libraryItems: Array.isArray(importedProject.libraryItems) ? importedProject.libraryItems : [],
+    analysisNotes: Array.isArray(importedProject.analysisNotes)
+      ? importedProject.analysisNotes
+      : [],
     entityNodePositions: importedProject.entityNodePositions || {},
     eventNodePositions: importedProject.eventNodePositions || {},
   })
 
 const withoutKey = <T>(record: Record<string, T>, key: string) =>
   Object.fromEntries(Object.entries(record).filter(([id]) => id !== key))
+
+const cloneAnalysisNoteDraft = <T extends Partial<AnalysisNoteDraft>>(draft: T): T =>
+  ({
+    ...draft,
+    ...(draft.nodeIds ? { nodeIds: [...draft.nodeIds] } : {}),
+    ...(draft.edgeIds ? { edgeIds: [...draft.edgeIds] } : {}),
+  }) as T
 
 export const useFushengluStore = create<StoreState>()(
   persist(
@@ -222,7 +184,7 @@ export const useFushengluStore = create<StoreState>()(
 
       const syncProject = async (project: FushengProject) => {
         try {
-          await saveProjectToBackend(normalizeProject(project))
+          await saveProjectToBackend(normalizeProjectForStorage(project))
           logState('Backend sync succeeded', { projectId: project.id })
           set({ backendStatus: 'online' })
         } catch (error) {
@@ -236,15 +198,21 @@ export const useFushengluStore = create<StoreState>()(
 
       const commitProject = (
         projectId: string,
-        updater: (project: FushengProject) => FushengProject,
+        updater: (project: FushengProject) => FushengProject | undefined,
       ) => {
         let changedProject: FushengProject | undefined
 
         set((state) => ({
           projects: state.projects.map((project) => {
-            if (project.id !== projectId) return normalizeProject(project)
+            if (project.id !== projectId) return normalizeProjectForStorage(project)
 
-            changedProject = touchProject(normalizeProject(updater(normalizeProject(project))))
+            const normalizedProject = normalizeProjectForStorage(project)
+            const updatedProject = updater(normalizedProject)
+            if (!updatedProject) return normalizedProject
+
+            changedProject = touchProject(
+              normalizeProjectForStorage(updatedProject),
+            )
             return changedProject
           }),
         }))
@@ -252,8 +220,21 @@ export const useFushengluStore = create<StoreState>()(
         if (changedProject) void syncProject(changedProject)
       }
 
+      const getCurrentProjectId = () => {
+        const projects = get().projects
+        const routeProjectId =
+          typeof window === 'undefined'
+            ? undefined
+            : window.location.pathname.match(/^\/projects\/([^/]+)/)?.[1]
+        const decodedRouteProjectId = routeProjectId ? decodeURIComponent(routeProjectId) : undefined
+
+        return projects.some((project) => project.id === decodedRouteProjectId)
+          ? decodedRouteProjectId
+          : projects[0]?.id
+      }
+
       return {
-        projects: sampleProjects.map(normalizeProject),
+        projects: sampleProjects.map(normalizeProjectForStorage),
         theme: 'light',
         sidebarCollapsed: false,
         backendStatus: 'checking',
@@ -296,7 +277,7 @@ export const useFushengluStore = create<StoreState>()(
 
         addProject: (draft) => {
           const id = makeId('project')
-          const project: FushengProject = normalizeProject({
+          const project: FushengProject = normalizeProjectForStorage({
             ...createProjectFromTemplate(
               draft.templateId,
               id,
@@ -307,7 +288,7 @@ export const useFushengluStore = create<StoreState>()(
             category: draft.category,
           })
 
-          set((state) => ({ projects: [project, ...state.projects.map(normalizeProject)] }))
+          set((state) => ({ projects: [project, ...state.projects.map(normalizeProjectForStorage)] }))
           logEvent('Project created', {
             projectId: id,
             templateId: draft.templateId,
@@ -538,6 +519,81 @@ export const useFushengluStore = create<StoreState>()(
           logEvent('Library item deleted', { projectId, itemId })
         },
 
+        addAnalysisNote: (draft) => {
+          const id = makeId('analysis')
+          const timestamp = now()
+          const projectId = getCurrentProjectId()
+          if (!projectId) return id
+
+          commitProject(projectId, (project) => ({
+            ...project,
+            analysisNotes: [
+              ...project.analysisNotes,
+              {
+                ...cloneAnalysisNoteDraft(draft),
+                id,
+                createdAt: timestamp,
+                updatedAt: timestamp,
+              },
+            ],
+          }))
+          logEvent('Analysis note created', {
+            projectId,
+            noteId: id,
+            graphMode: draft.graphMode,
+          })
+          return id
+        },
+
+        updateAnalysisNote: (noteId, draft) => {
+          const projectId = getCurrentProjectId()
+          if (!projectId) return
+
+          const updates = cloneAnalysisNoteDraft(draft)
+          const timestamp = now()
+          let updated = false
+
+          commitProject(projectId, (project) => {
+            if (!project.analysisNotes.some((note) => note.id === noteId)) return undefined
+
+            updated = true
+            return {
+              ...project,
+              analysisNotes: project.analysisNotes.map((note) =>
+                note.id === noteId
+                  ? {
+                      ...note,
+                      ...updates,
+                      createdAt: note.createdAt,
+                      updatedAt: timestamp,
+                    }
+                  : note,
+              ),
+            }
+          })
+
+          if (updated) logEvent('Analysis note updated', { projectId, noteId })
+        },
+
+        deleteAnalysisNote: (noteId) => {
+          const projectId = getCurrentProjectId()
+          if (!projectId) return
+
+          let deleted = false
+
+          commitProject(projectId, (project) => {
+            if (!project.analysisNotes.some((note) => note.id === noteId)) return undefined
+
+            deleted = true
+            return {
+              ...project,
+              analysisNotes: project.analysisNotes.filter((note) => note.id !== noteId),
+            }
+          })
+
+          if (deleted) logEvent('Analysis note deleted', { projectId, noteId })
+        },
+
         replaceProjectData: (projectId, importedProject) => {
           commitProject(projectId, (project) => cleanImportedProject(project, importedProject))
           logEvent('Project data replaced', {
@@ -570,6 +626,7 @@ export const useFushengluStore = create<StoreState>()(
             entityRelations: [],
             eventLinks: [],
             libraryItems: [],
+            analysisNotes: [],
             entityNodePositions: {},
             eventNodePositions: {},
           }))
@@ -581,7 +638,7 @@ export const useFushengluStore = create<StoreState>()(
       name: 'fushenglu-storage',
       version: 4,
       partialize: (state) => ({
-        projects: state.projects.map(normalizeProject),
+        projects: state.projects.map(normalizeProjectForStorage),
         theme: state.theme,
         sidebarCollapsed: state.sidebarCollapsed,
       }),

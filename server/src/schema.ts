@@ -1,10 +1,22 @@
 import { z } from 'zod'
 import { createSampleProject } from '../../src/data/sampleData.ts'
-import type { FushengProject } from '../../src/types/index.ts'
+import {
+  FUSHENGLU_SCHEMA_VERSION,
+  normalizeDatabaseForStorage,
+  normalizeProjectForStorage,
+  type FushengDatabase,
+} from '../../src/shared/projectNormalization.ts'
+import type { FushengProject, ProjectTemplateId } from '../../src/types/index.ts'
 
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = FUSHENGLU_SCHEMA_VERSION
+
+export type { FushengDatabase }
 
 const tagListSchema = z.array(z.string()).default([])
+const yearRangeSchema = {
+  startYear: z.number().finite().optional(),
+  endYear: z.number().finite().optional(),
+}
 const positionSchema = z.object({
   x: z.number().finite(),
   y: z.number().finite(),
@@ -34,6 +46,7 @@ const entitySchema = z.object({
   description: z.string().optional(),
   avatarUrl: z.string().optional(),
   tags: tagListSchema,
+  ...yearRangeSchema,
 })
 
 const eventSchema = z.object({
@@ -47,6 +60,7 @@ const eventSchema = z.object({
   description: z.string().optional(),
   relatedEntityIds: z.array(z.string()).default([]),
   tags: tagListSchema,
+  ...yearRangeSchema,
 })
 
 const entityRelationSchema = z.object({
@@ -56,6 +70,7 @@ const entityRelationSchema = z.object({
   type: z.string().min(1),
   description: z.string().optional(),
   style: edgeStyleSchema,
+  ...yearRangeSchema,
 })
 
 const eventLinkSchema = z.object({
@@ -65,6 +80,7 @@ const eventLinkSchema = z.object({
   type: z.string().min(1),
   description: z.string().optional(),
   style: edgeStyleSchema,
+  ...yearRangeSchema,
 })
 
 const libraryItemSchema = z.object({
@@ -74,6 +90,19 @@ const libraryItemSchema = z.object({
   content: z.string().default(''),
   tags: tagListSchema,
   createdAt: z.string().default(() => new Date().toISOString()),
+})
+
+const analysisNoteSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  graphMode: z.enum(['entities', 'events']),
+  startId: z.string().optional(),
+  targetId: z.string().optional(),
+  nodeIds: z.array(z.string()).default([]),
+  edgeIds: z.array(z.string()).default([]),
+  summary: z.string().default(''),
+  createdAt: z.string().default(() => new Date().toISOString()),
+  updatedAt: z.string().default(() => new Date().toISOString()),
 })
 
 export const projectSchema = z
@@ -92,26 +121,23 @@ export const projectSchema = z
     entityRelations: z.array(entityRelationSchema).default([]),
     eventLinks: z.array(eventLinkSchema).default([]),
     libraryItems: z.array(libraryItemSchema).default([]),
+    analysisNotes: z.array(analysisNoteSchema).default([]),
     entityNodePositions: z.record(z.string(), positionSchema).default({}),
     eventNodePositions: z.record(z.string(), positionSchema).default({}),
   })
-  .transform((project) => ({
-    ...project,
-    schemaVersion: SCHEMA_VERSION,
-    templateId: project.templateId ?? (project.category === 'history' ? 'history' : 'fiction'),
-  }))
+  .transform((project) =>
+    normalizeProjectForStorage({
+      ...project,
+      templateId: project.templateId as ProjectTemplateId,
+    } as FushengProject),
+  )
 
 export const databaseSchema = z
   .object({
     schemaVersion: z.number().optional(),
     projects: z.array(projectSchema).default([]),
   })
-  .transform((database) => ({
-    schemaVersion: SCHEMA_VERSION,
-    projects: database.projects,
-  }))
-
-export type FushengDatabase = z.infer<typeof databaseSchema>
+  .transform(normalizeDatabaseForStorage)
 
 export function normalizeProject(payload: unknown): FushengProject {
   return projectSchema.parse(payload) as FushengProject

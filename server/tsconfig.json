@@ -4,5 +4,5 @@
     "tsBuildInfoFile": "../node_modules/.tmp/tsconfig.server.tsbuildinfo",
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "../src/data/**/*.ts", "../src/types/**/*.ts"]
+  "include": ["src/**/*.ts", "../src/data/**/*.ts", "../src/shared/**/*.ts", "../src/types/**/*.ts"]
 }

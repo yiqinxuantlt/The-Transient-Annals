@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useEffect, useMemo } from 'react'
+import { memo, useEffect, useMemo, useRef } from 'react'
 import ReactFlow, {
   Background,
   ConnectionLineType,
@@ -14,6 +14,7 @@ import ReactFlow, {
   type Edge,
   type Node,
   type NodeProps,
+  type ReactFlowInstance,
 } from 'reactflow'
 import type {
   DetailSelection,
@@ -39,6 +40,13 @@ type Props = {
   focusNodeId?: string | null
   onFocusNodeChange?: (nodeId: string | null) => void
   currentYear?: number | null
+  visibleNodeIds?: Set<string>
+  visibleEdgeIds?: Set<string>
+  activeChain?: { nodeIds: string[]; edgeIds: string[] }
+  emptyTitle?: string
+  emptyDescription?: string
+  layoutStatus?: 'idle' | 'saving' | 'saved' | 'failed'
+  fitViewKey?: number
 }
 
 type EntityNodeData = {
@@ -82,7 +90,7 @@ const entityTypeLabel: Record<Entity['type'], string> = {
   other: '其他',
 }
 
-function EntityGraphNode({ data, selected }: NodeProps<EntityNodeData>) {
+const EntityGraphNode = memo(function EntityGraphNode({ data, selected }: NodeProps<EntityNodeData>) {
   const { entity, compact, dimmed } = data
 
   return (
@@ -121,9 +129,9 @@ function EntityGraphNode({ data, selected }: NodeProps<EntityNodeData>) {
       ) : null}
     </div>
   )
-}
+})
 
-function EventGraphNode({ data, selected }: NodeProps<EventNodeData>) {
+const EventGraphNode = memo(function EventGraphNode({ data, selected }: NodeProps<EventNodeData>) {
   const { event, compact, dimmed } = data
 
   return (
@@ -162,7 +170,7 @@ function EventGraphNode({ data, selected }: NodeProps<EventNodeData>) {
       ) : null}
     </div>
   )
-}
+})
 
 const nodeTypes = {
   archiveEntity: EntityGraphNode,
@@ -339,20 +347,66 @@ export default function GraphCanvas({
   focusNodeId,
   onFocusNodeChange,
   currentYear,
+  visibleNodeIds,
+  visibleEdgeIds,
+  activeChain,
+  emptyTitle,
+  emptyDescription,
+  layoutStatus,
+  fitViewKey,
 }: Props) {
+  const flowInstanceRef = useRef<ReactFlowInstance | null>(null)
   const graph = useMemo(
     () => buildGraph(project, mode, compact, currentYear),
     [compact, currentYear, mode, project],
   )
-  const [nodes, setNodes, onNodesChange] = useNodesState(graph.nodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(graph.edges)
+  const visibleGraph = useMemo(() => {
+    const filteredNodes = visibleNodeIds
+      ? graph.nodes.filter((node) => visibleNodeIds.has(node.id))
+      : graph.nodes
+    const nodeIds = new Set(filteredNodes.map((node) => node.id))
+    const filteredEdges = graph.edges.filter((edge) => {
+      if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) return false
+      return visibleEdgeIds ? visibleEdgeIds.has(edge.id) : true
+    })
+
+    return { nodes: filteredNodes, edges: filteredEdges }
+  }, [graph, visibleEdgeIds, visibleNodeIds])
+  const [nodes, setNodes, onNodesChange] = useNodesState(visibleGraph.nodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(visibleGraph.edges)
 
   useEffect(() => {
-    setNodes(graph.nodes)
-    setEdges(graph.edges)
-  }, [graph, setEdges, setNodes])
+    setNodes(visibleGraph.nodes)
+    setEdges(visibleGraph.edges)
+  }, [setEdges, setNodes, visibleGraph])
 
   useEffect(() => {
+    const hasChain = Boolean(activeChain?.nodeIds.length || activeChain?.edgeIds.length)
+    if (hasChain) {
+      const chainNodeIds = new Set(activeChain?.nodeIds)
+      const chainEdgeIds = new Set(activeChain?.edgeIds)
+
+      setNodes((prev) =>
+        prev.map((node) => ({
+          ...node,
+          data: { ...node.data, dimmed: !chainNodeIds.has(node.id) },
+        })),
+      )
+      setEdges((prev) =>
+        prev.map((edge) => ({
+          ...edge,
+          animated: chainEdgeIds.has(edge.id) ? true : edge.animated,
+          style: {
+            ...edge.style,
+            opacity: chainEdgeIds.has(edge.id) ? 1 : 0.12,
+            pointerEvents: chainEdgeIds.has(edge.id) ? 'auto' : 'none',
+            strokeWidth: chainEdgeIds.has(edge.id) ? 4 : edge.style?.strokeWidth,
+          },
+        })),
+      )
+      return
+    }
+
     if (!focusNodeId) {
       setNodes((prev) =>
         prev.map((node) => ({
@@ -360,19 +414,14 @@ export default function GraphCanvas({
           data: { ...node.data, dimmed: false },
         })),
       )
-      setEdges((prev) =>
-        prev.map((edge) => ({
-          ...edge,
-          style: { ...edge.style, opacity: 1, pointerEvents: 'auto' },
-        })),
-      )
+      setEdges(visibleGraph.edges)
       return
     }
 
     const focusConnected = new Set<string>([focusNodeId])
     const activeEdgeIds = new Set<string>()
 
-    for (const edge of graph.edges) {
+    for (const edge of visibleGraph.edges) {
       if (edge.source === focusNodeId || edge.target === focusNodeId) {
         focusConnected.add(edge.source)
         focusConnected.add(edge.target)
@@ -396,12 +445,27 @@ export default function GraphCanvas({
         },
       })),
     )
-  }, [focusNodeId, graph.edges, setEdges, setNodes])
+  }, [activeChain, focusNodeId, setEdges, setNodes, visibleGraph.edges, visibleGraph.nodes])
+
+  useEffect(() => {
+    if (fitViewKey == null) return
+    const timer = window.setTimeout(() => {
+      flowInstanceRef.current?.fitView({ duration: 280, padding: 0.25 })
+    }, 40)
+    return () => window.clearTimeout(timer)
+  }, [fitViewKey])
 
   const connectNodes = (connection: Connection) => {
     if (!connection.source || !connection.target || connection.source === connection.target) return
     onConnectNodes?.({ sourceId: connection.source, targetId: connection.target })
   }
+
+  const layoutStatusLabel = {
+    idle: '',
+    saving: '布局保存中',
+    saved: '布局已保存',
+    failed: '布局保存失败',
+  }[layoutStatus || 'idle']
 
   return (
     <div
@@ -411,6 +475,21 @@ export default function GraphCanvas({
           'radial-gradient(circle at 18% 18%, rgb(var(--goldline) / 0.12), transparent 26%), linear-gradient(135deg, rgb(var(--paper-50) / 0.96), rgb(var(--paper-100) / 0.9))',
       }}
     >
+      {layoutStatusLabel ? (
+        <div className="absolute bottom-4 left-4 z-10 rounded-lg border border-goldline/25 bg-paper-50/92 px-3 py-2 text-xs text-ink-700 shadow-soft backdrop-blur">
+          {layoutStatusLabel}
+        </div>
+      ) : null}
+      {!visibleGraph.nodes.length ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
+          <div className="max-w-sm rounded-lg border border-dashed border-ink-900/15 bg-paper-50/92 p-5 text-center shadow-soft backdrop-blur">
+            <h3 className="font-serif text-xl font-semibold">{emptyTitle || '暂无图谱内容'}</h3>
+            <p className="mt-2 text-sm leading-6 text-ink-500">
+              {emptyDescription || '添加节点或清空筛选后，图谱会显示在这里。'}
+            </p>
+          </div>
+        </div>
+      ) : null}
       {focusNodeId ? (
         <div className="absolute right-4 top-4 z-10">
           <button
@@ -432,6 +511,9 @@ export default function GraphCanvas({
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onInit={(instance) => {
+          flowInstanceRef.current = instance
+        }}
         onConnect={connectNodes}
         onNodeDragStop={(_, node) => {
           if (compact) return
