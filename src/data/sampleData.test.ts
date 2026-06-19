@@ -19,7 +19,9 @@ describe('sampleData', () => {
     expect(createFictionSampleProject().libraryItems[0]?.title).toBe('主题札记：身份与选择')
   })
 
-  it('does not serialize replacement characters into shipped sample data', () => {
-    expect(JSON.stringify(sampleProjects)).not.toContain('\uFFFD')
+  it('does not serialize replacement characters or common mojibake markers into shipped sample data', () => {
+    const serialized = JSON.stringify(sampleProjects)
+    expect(serialized).not.toContain('\uFFFD')
+    expect(serialized).not.toMatch(/鍘|妗|璇|鈥|锛|鐨|绌|鎼/)
   })
 })
