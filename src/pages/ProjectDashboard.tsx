@@ -1,5 +1,6 @@
 import { GitBranch, Network, ScrollText, UsersRound } from 'lucide-react'
 import { useState } from 'react'
+import { ArchivePageHeader } from '../components/archive'
 import DetailPanel from '../components/DetailPanel'
 import EventTimeline from '../components/EventTimeline'
 import GraphCanvas from '../components/GraphCanvas'
@@ -23,27 +24,32 @@ export default function ProjectDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-goldline/25 bg-paper-50 p-6 shadow-soft">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="text-sm text-ink-500">{template.dashboard.eyebrow}</p>
-            <h2 className="mt-2 font-serif text-3xl font-semibold">{project.title}</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-ink-700">{project.subtitle}</p>
-          </div>
-          <p className="text-sm text-ink-500">
+      <ArchivePageHeader
+        eyebrow={template.dashboard.eyebrow}
+        title={project.title}
+        description={project.subtitle}
+        ribbonLabel="案卷总览"
+        sealLabel="总览"
+        actions={
+          <p className="max-w-48 text-right text-sm leading-6 text-ink-500 sm:max-w-none">
             最近编辑：{new Date(project.updatedAt).toLocaleString('zh-CN')}
           </p>
-        </div>
-      </section>
+        }
+      />
 
       <section className="grid gap-4 md:grid-cols-4">
         {stats.map((item) => {
           const Icon = item.icon
           return (
-            <article key={item.label} className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
-              <Icon className="text-cinnabar" size={20} />
-              <strong className="mt-4 block font-serif text-3xl">{item.value}</strong>
-              <span className="text-sm text-ink-500">{item.label}</span>
+            <article
+              key={item.label}
+              className="archive-card paper-grain rounded-lg border border-goldline/20 p-5 shadow-soft"
+            >
+              <div className="relative z-10">
+                <Icon className="text-cinnabar" size={20} />
+                <strong className="mt-4 block font-serif text-3xl text-ink-900">{item.value}</strong>
+                <span className="text-sm text-ink-500">{item.label}</span>
+              </div>
             </article>
           )
         })}
@@ -51,8 +57,8 @@ export default function ProjectDashboard() {
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <div className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="archive-card paper-grain rounded-lg border border-goldline/20 p-5 shadow-soft">
+            <div className="relative z-10 mb-4 flex items-center justify-between">
               <div>
                 <p className="text-xs text-ink-500">{template.pages.relationGraph.eyebrow}</p>
                 <h3 className="font-serif text-2xl font-semibold">
@@ -61,17 +67,19 @@ export default function ProjectDashboard() {
               </div>
               <Network className="text-jade" size={22} />
             </div>
-            <div className="h-[430px]">
+            <div className="relative z-10 h-[430px]">
               <GraphCanvas project={project} mode="entities" compact onSelect={setSelection} />
             </div>
           </div>
 
-          <div className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
-            <p className="text-xs text-ink-500">{template.pages.timeline.eyebrow}</p>
-            <h3 className="mt-1 font-serif text-2xl font-semibold">
-              {template.dashboard.timelinePreviewTitle}
-            </h3>
-            <div className="mt-5">
+          <div className="archive-card paper-grain rounded-lg border border-goldline/20 p-5 shadow-soft">
+            <div className="relative z-10">
+              <p className="text-xs text-ink-500">{template.pages.timeline.eyebrow}</p>
+              <h3 className="mt-1 font-serif text-2xl font-semibold">
+                {template.dashboard.timelinePreviewTitle}
+              </h3>
+            </div>
+            <div className="relative z-10 mt-5">
               <EventTimeline
                 events={project.events.slice(0, 5)}
                 entities={project.entities}

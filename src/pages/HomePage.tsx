@@ -41,15 +41,15 @@ export default function HomePage() {
         </div>
 
         {firstProject ? (
-          <div className="rounded-lg border border-goldline/25 bg-paper-50/75 p-4 shadow-archive">
-            <div className="mb-4 flex items-center justify-between px-2">
+          <div className="archive-card paper-grain rounded-lg border border-goldline/25 bg-paper-50/75 p-4 shadow-archive">
+            <div className="relative z-10 mb-4 flex items-center justify-between px-2">
               <div>
                 <p className="text-xs text-ink-500">关系图预览</p>
                 <h2 className="font-serif text-2xl font-semibold">一张安静展开的叙事地图</h2>
               </div>
               <Network className="text-jade" size={24} />
             </div>
-            <div className="h-[420px]">
+            <div className="relative z-10 h-[420px]">
               <GraphCanvas project={firstProject} mode="entities" compact />
             </div>
           </div>
@@ -78,11 +78,13 @@ export default function HomePage() {
           return (
             <article
               key={item.title}
-              className="rounded-lg border border-ink-900/10 bg-paper-50/75 p-6 shadow-soft"
+              className="archive-card paper-grain rounded-lg border border-goldline/25 bg-paper-50/75 p-6 shadow-soft"
             >
-              <Icon className="text-cinnabar" size={24} />
-              <h2 className="mt-5 font-serif text-2xl font-semibold">{item.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-ink-700">{item.text}</p>
+              <div className="relative z-10">
+                <Icon className="text-cinnabar" size={24} />
+                <h2 className="mt-5 font-serif text-2xl font-semibold">{item.title}</h2>
+                <p className="mt-3 text-sm leading-7 text-ink-700">{item.text}</p>
+              </div>
             </article>
           )
         })}
@@ -90,10 +92,12 @@ export default function HomePage() {
 
       {firstProject ? (
         <section className="mt-14 grid gap-6 lg:grid-cols-[1fr_0.82fr]">
-          <div className="rounded-lg border border-ink-900/10 bg-paper-50/75 p-6 shadow-soft">
-            <p className="text-xs text-ink-500">示例时间线</p>
-            <h2 className="mt-1 font-serif text-2xl font-semibold">从信件到对峙</h2>
-            <div className="mt-6">
+          <div className="archive-card paper-grain rounded-lg border border-goldline/25 bg-paper-50/75 p-6 shadow-soft">
+            <div className="relative z-10">
+              <p className="text-xs text-ink-500">示例时间线</p>
+              <h2 className="mt-1 font-serif text-2xl font-semibold">从信件到对峙</h2>
+            </div>
+            <div className="relative z-10 mt-6">
               <EventTimeline
                 events={firstProject.events.slice(0, 4)}
                 entities={firstProject.entities}
@@ -102,12 +106,14 @@ export default function HomePage() {
               />
             </div>
           </div>
-          <div className="rounded-lg border border-ink-900/10 bg-ink-900 p-6 text-paper-50 shadow-archive">
-            <p className="text-sm text-paper-100/70">适用场景</p>
-            <h2 className="mt-3 font-serif text-3xl font-semibold">历史专题、小说、剧本、游戏世界观，都可以成为一份案卷。</h2>
-            <p className="mt-5 text-sm leading-7 text-paper-100/72">
-              首页只负责进入项目；真正的工作台在项目内部展开。人物志、事件簿、群像图、因果图、藏卷和设置彼此分层，不把复杂功能挤在同一屏。
-            </p>
+          <div className="archive-card paper-grain rounded-lg border border-goldline/25 bg-paper-50/75 p-6 shadow-archive">
+            <div className="relative z-10">
+              <p className="text-sm text-cinnabar">适用场景</p>
+              <h2 className="mt-3 font-serif text-3xl font-semibold text-ink-900">历史专题、小说、剧本、游戏世界观，都可以成为一份案卷。</h2>
+              <p className="mt-5 text-sm leading-7 text-ink-700">
+                首页只负责进入项目；真正的工作台在项目内部展开。人物志、事件簿、群像图、因果图、藏卷和设置彼此分层，不把复杂功能挤在同一屏。
+              </p>
+            </div>
           </div>
         </section>
       ) : null}

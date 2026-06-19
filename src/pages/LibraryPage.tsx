@@ -1,5 +1,6 @@
-﻿import { Archive, Plus, Trash2 } from 'lucide-react'
+import { Archive, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { ArchiveEmptyState, ArchivePageHeader, ArchiveTag } from '../components/archive'
 import DetailPanel from '../components/DetailPanel'
 import EditorModal from '../components/EditorModal'
 import { useProject } from '../hooks/useProject'
@@ -56,56 +57,55 @@ export default function LibraryPage() {
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <section>
-        <div className="rounded-lg border border-ink-900/10 bg-paper-50 p-6 shadow-soft">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-sm text-ink-500">{template.pages.library.eyebrow}</p>
-              <h2 className="mt-1 font-serif text-3xl font-semibold">{template.pages.library.title}</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-ink-700">
-                {template.pages.library.description}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-ink-900 px-5 text-paper-50 shadow-soft transition hover:bg-ink-700"
-            >
+        <ArchivePageHeader
+          eyebrow={template.pages.library.eyebrow}
+          title={template.pages.library.title}
+          description={template.pages.library.description}
+          ribbonLabel={template.id === 'history' ? '史料入库' : '藏卷入库'}
+          sealLabel="藏卷"
+          actions={
+            <button type="button" onClick={() => setOpen(true)} className="archive-primary-button">
               <Plus size={18} />
               {template.pages.library.addLabel}
             </button>
-          </div>
-        </div>
+          }
+        />
 
         <div className="mt-5 grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
           {project.libraryItems.map((item) => (
             <article
               key={item.id}
-              className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-archive"
+              className={[
+                'archive-card paper-grain rounded-lg border p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-archive',
+                selection?.kind === 'libraryItem' && selection.id === item.id
+                  ? 'border-cinnabar/50 ring-2 ring-cinnabar/10'
+                  : 'border-goldline/20',
+              ].join(' ')}
             >
               <button
                 type="button"
                 onClick={() => setSelection({ kind: 'libraryItem', id: item.id })}
-                className="block w-full text-left"
+                className="relative z-10 block w-full text-left"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-xs text-ink-500">{kindLabel[item.kind]}</p>
-                    <h3 className="mt-1 font-serif text-xl font-semibold">{item.title}</h3>
+                    <h3 className="mt-1 font-serif text-xl font-semibold text-ink-900">{item.title}</h3>
                   </div>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-jade/10 text-jade">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-jade/20 bg-jade/10 text-jade">
                     <Archive size={18} />
                   </span>
                 </div>
                 <p className="mt-4 line-clamp-3 text-sm leading-6 text-ink-700">{item.content}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {item.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-goldline/12 px-3 py-1 text-xs text-ink-700">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                {item.tags.length ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {item.tags.map((tag) => (
+                      <ArchiveTag key={tag}>{tag}</ArchiveTag>
+                    ))}
+                  </div>
+                ) : null}
               </button>
-              <div className="mt-5 flex justify-end border-t border-ink-900/10 pt-4">
+              <div className="relative z-10 mt-5 flex justify-end border-t border-goldline/15 pt-4">
                 <button
                   type="button"
                   onClick={() => deleteLibraryItem(project.id, item.id)}
@@ -118,6 +118,21 @@ export default function LibraryPage() {
             </article>
           ))}
         </div>
+
+        {project.libraryItems.length === 0 ? (
+          <div className="mt-5">
+            <ArchiveEmptyState
+              title="暂无藏卷"
+              description="先收入一条资料、摘录、备注或灵感片段，再与人物和事件交叉查阅。"
+              action={
+                <button type="button" onClick={() => setOpen(true)} className="archive-primary-button">
+                  <Plus size={18} />
+                  {template.pages.library.addLabel}
+                </button>
+              }
+            />
+          </div>
+        ) : null}
       </section>
 
       <DetailPanel project={project} selection={selection} />
@@ -135,7 +150,7 @@ export default function LibraryPage() {
             <input
               value={draft.title}
               onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))}
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              className="archive-input w-full"
             />
           </label>
           <label className="grid gap-2 text-sm">
@@ -145,7 +160,7 @@ export default function LibraryPage() {
               onChange={(event) =>
                 setDraft((value) => ({ ...value, kind: event.target.value as LibraryItemKind }))
               }
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              className="archive-input w-full"
             >
               {Object.entries(kindLabel).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -161,7 +176,7 @@ export default function LibraryPage() {
               onChange={(event) =>
                 setDraft((value) => ({ ...value, content: event.target.value }))
               }
-              className="min-h-36 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 py-3 outline-none focus:border-goldline"
+              className="archive-input min-h-36 w-full !py-3"
             />
           </label>
           <label className="grid gap-2 text-sm">
@@ -169,7 +184,7 @@ export default function LibraryPage() {
             <input
               value={tagText}
               onChange={(event) => setTagText(event.target.value)}
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              className="archive-input w-full"
               placeholder="用逗号分隔"
             />
           </label>
