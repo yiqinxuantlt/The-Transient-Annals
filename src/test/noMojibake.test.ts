@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import { describe, expect, it } from 'vitest'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, join } from 'node:path'
@@ -34,7 +36,7 @@ const mojibakePattern = new RegExp(
 )
 
 function collectSourceFiles(directory: string): string[] {
-  return readdirSync(directory).flatMap((entry) => {
+  return readdirSync(directory).flatMap((entry: string) => {
     const path = join(directory, entry)
     const stats = statSync(path)
 
