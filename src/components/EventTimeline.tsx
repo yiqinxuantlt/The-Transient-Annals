@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { CalendarDays, MapPin, UsersRound } from 'lucide-react'
 import { useMemo } from 'react'
+import { groupEventsForTimeline } from '../lib/recordDisplay'
 import type { EventLink, StoryEvent } from '../types'
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -53,6 +54,15 @@ function getDotRole(eventId: string, eventLinks: EventLink[]): 'source' | 'targe
   return 'none'
 }
 
+function combineDotRoles(events: StoryEvent[], eventLinks: EventLink[]): 'source' | 'target' | 'both' | 'none' {
+  const roles = events.map((event) => getDotRole(event.id, eventLinks))
+  if (roles.includes('both')) return 'both'
+  if (roles.includes('source') && roles.includes('target')) return 'both'
+  if (roles.includes('source')) return 'source'
+  if (roles.includes('target')) return 'target'
+  return 'none'
+}
+
 /* ─────────────────────────────────────────────────────────────────────
    Event Card
    ───────────────────────────────────────────────────────────────────── */
@@ -87,6 +97,7 @@ function TimelineEventCard({
         }
       }}
       aria-pressed={selected}
+      aria-label={`选择事件：${event.title}`}
       className={clsx(
         'archive-card paper-grain archive-event-card mountain-wash group relative block w-full overflow-hidden rounded-lg border p-5 text-left shadow-soft outline-none transition duration-200 hover:-translate-y-0.5 hover:border-goldline/50 hover:shadow-archive focus-visible:ring-2 focus-visible:ring-goldline/45',
         selected
@@ -186,10 +197,7 @@ export default function EventTimeline({
   onSelect,
   compact,
 }: Props) {
-  const sortedEvents = useMemo(
-    () => [...events].sort((a, b) => a.order - b.order),
-    [events],
-  )
+  const timelineGroups = useMemo(() => groupEventsForTimeline(events), [events])
 
   const idToName = useMemo(
     () => new Map(entities.map((e) => [e.id, e.name])),
@@ -203,7 +211,7 @@ export default function EventTimeline({
       .slice(0, 3)
       .join('、')
 
-  if (sortedEvents.length === 0) return <EmptyTimeline />
+  if (timelineGroups.length === 0) return <EmptyTimeline />
 
   /* ──────────────────────────────────────────────────────────────
      Compact mode: left-rail (dashboard)
@@ -212,46 +220,56 @@ export default function EventTimeline({
     return (
       <div className="timeline-compact">
         <div className="timeline-compact-rail" aria-hidden="true" />
-        {sortedEvents.map((event, index) => {
-          const selected = selectedId === event.id
-          const role = getDotRole(event.id, eventLinks)
-          return (
-            <div key={event.id} className="timeline-compact-item">
-              <button
-                type="button"
-                className={clsx(
-                  'timeline-compact-dot',
-                  selected && 'timeline-compact-dot-selected',
-                )}
-                style={{
-                  borderColor: selected
-                    ? undefined
-                    : role === 'source'
-                      ? 'rgb(159 76 63 / 0.55)'
-                      : role === 'target'
-                        ? 'rgb(85 120 111 / 0.55)'
-                        : role === 'both'
-                          ? 'rgb(185 154 95 / 0.55)'
-                          : undefined,
-                }}
-                onClick={() => onSelect(event.id)}
-                aria-label={`选择事件：${event.title}`}
-              >
-                <span className="timeline-compact-dot-inner" />
-              </button>
+        {timelineGroups.flatMap((group) =>
+          group.events.map((event, eventIndex) => {
+            const index = group.startIndex + eventIndex
+            const selected = selectedId === event.id
+            const role = getDotRole(event.id, eventLinks)
 
-              <TimelineEventCard
-                event={event}
-                index={index}
-                relatedNames={relatedNamesFor(event)}
-                selected={selected}
-                dotRole={role}
-                compact
-                onSelect={onSelect}
-              />
-            </div>
-          )
-        })}
+            return (
+              <div key={event.id} className="timeline-compact-item">
+                {eventIndex === 0 ? (
+                  <p className="mb-2 text-xs text-ink-500">
+                    {group.label}
+                    {group.events.length > 1 ? ` · 同时段 ${group.events.length} 件` : null}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  className={clsx(
+                    'timeline-compact-dot',
+                    selected && 'timeline-compact-dot-selected',
+                  )}
+                  style={{
+                    borderColor: selected
+                      ? undefined
+                      : role === 'source'
+                        ? 'rgb(159 76 63 / 0.55)'
+                        : role === 'target'
+                          ? 'rgb(85 120 111 / 0.55)'
+                          : role === 'both'
+                            ? 'rgb(185 154 95 / 0.55)'
+                            : undefined,
+                  }}
+                  onClick={() => onSelect(event.id)}
+                  aria-label={`选择事件：${event.title}`}
+                >
+                  <span className="timeline-compact-dot-inner" />
+                </button>
+
+                <TimelineEventCard
+                  event={event}
+                  index={index}
+                  relatedNames={relatedNamesFor(event)}
+                  selected={selected}
+                  dotRole={role}
+                  compact
+                  onSelect={onSelect}
+                />
+              </div>
+            )
+          }),
+        )}
       </div>
     )
   }
@@ -265,14 +283,30 @@ export default function EventTimeline({
       <div className="timeline-spine" aria-hidden="true" />
 
       <div className="relative">
-        {sortedEvents.map((event, index) => {
-          const isLeft = index % 2 === 0
-          const selected = selectedId === event.id
-          const role = getDotRole(event.id, eventLinks)
+        {timelineGroups.map((group, groupIndex) => {
+          const isLeft = groupIndex % 2 === 0
+          const primaryEvent = group.events[0]
+          const selected = group.events.some((event) => selectedId === event.id)
+          const role = combineDotRoles(group.events, eventLinks)
+          const eventCards = (
+            <div className="timeline-card-wrapper space-y-4">
+              {group.events.map((event, eventIndex) => (
+                <TimelineEventCard
+                  key={event.id}
+                  event={event}
+                  index={group.startIndex + eventIndex}
+                  relatedNames={relatedNamesFor(event)}
+                  selected={selectedId === event.id}
+                  dotRole={getDotRole(event.id, eventLinks)}
+                  onSelect={onSelect}
+                />
+              ))}
+            </div>
+          )
 
           return (
             <div
-              key={event.id}
+              key={group.key}
               className={clsx(
                 'timeline-row',
                 isLeft ? 'timeline-row-left' : 'timeline-row-right',
@@ -280,18 +314,7 @@ export default function EventTimeline({
             >
               {/* ── Left cell ── */}
               <div className="timeline-left-cell">
-                {isLeft ? (
-                  <div className="timeline-card-wrapper">
-                    <TimelineEventCard
-                      event={event}
-                      index={index}
-                      relatedNames={relatedNamesFor(event)}
-                      selected={selected}
-                      dotRole={role}
-                      onSelect={onSelect}
-                    />
-                  </div>
-                ) : null}
+                {isLeft ? eventCards : null}
               </div>
 
               {/* ── Center cell: dot, connector, time label ── */}
@@ -322,32 +345,26 @@ export default function EventTimeline({
                     role === 'target' && !selected && 'timeline-dot-target',
                     role === 'both' && !selected && 'timeline-dot-both',
                   )}
-                  onClick={() => onSelect(event.id)}
-                  aria-label={`选择事件：${event.title}`}
+                  onClick={() => onSelect(primaryEvent.id)}
+                  aria-label={`选择时间节点：${group.label}`}
                 >
                   <span className="timeline-dot-inner" />
                 </button>
 
                 {/* Time label below the dot */}
                 <span className="timeline-time-label">
-                  {event.timeLabel || `#${event.order}`}
+                  {group.label}
+                  {group.events.length > 1 ? (
+                    <span className="mt-1 block rounded-full bg-goldline/12 px-2 py-0.5 text-[10px] text-ink-600">
+                      共 {group.events.length} 件
+                    </span>
+                  ) : null}
                 </span>
               </div>
 
               {/* ── Right cell ── */}
               <div className="timeline-right-cell">
-                {!isLeft ? (
-                  <div className="timeline-card-wrapper">
-                    <TimelineEventCard
-                      event={event}
-                      index={index}
-                      relatedNames={relatedNamesFor(event)}
-                      selected={selected}
-                      dotRole={role}
-                      onSelect={onSelect}
-                    />
-                  </div>
-                ) : null}
+                {!isLeft ? eventCards : null}
               </div>
             </div>
           )

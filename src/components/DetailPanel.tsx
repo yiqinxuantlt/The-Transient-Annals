@@ -1,4 +1,10 @@
 import { Archive, Crosshair, GitBranch, Link2, ScrollText } from 'lucide-react'
+import {
+  formatEntityLabel,
+  formatEntitySecondaryLabel,
+  formatEventOptionLabel,
+  hasDuplicateEntityName,
+} from '../lib/recordDisplay'
 import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection, EntityRelation, FushengProject } from '../types'
 import AvatarBadge from './AvatarBadge'
@@ -66,6 +72,11 @@ export default function DetailPanel({
             <div>
               <p className="text-xs text-ink-500">{template.entityTypeLabels[entity.type]}</p>
               <h3 className="font-serif text-2xl font-semibold">{entity.name}</h3>
+              {hasDuplicateEntityName(entity, project.entities) ? (
+                <p className="mt-1 text-xs text-cinnabar">
+                  {formatEntitySecondaryLabel(entity, template.entityTypeLabels[entity.type])}
+                </p>
+              ) : null}
             </div>
           </div>
           <Tags tags={entity.tags} />
@@ -87,10 +98,17 @@ export default function DetailPanel({
               <p className="mb-2 text-xs tracking-wide text-ink-500">关联关系</p>
               <div className="space-y-1.5">
                 {relatedRelations.map((relation) => {
-                  const otherName =
+                  const otherEntity =
                     relation.sourceId === entity.id
-                      ? project.entities.find((item) => item.id === relation.targetId)?.name
-                      : project.entities.find((item) => item.id === relation.sourceId)?.name
+                      ? project.entities.find((item) => item.id === relation.targetId)
+                      : project.entities.find((item) => item.id === relation.sourceId)
+                  const otherEntityLabel = otherEntity
+                    ? formatEntityLabel(
+                        otherEntity,
+                        project.entities,
+                        template.entityTypeLabels[otherEntity.type],
+                      )
+                    : '未知'
 
                   return (
                     <button
@@ -101,7 +119,7 @@ export default function DetailPanel({
                     >
                       <Crosshair size={13} className="shrink-0 text-ink-400" />
                       <span className="text-ink-800">{relation.type}</span>
-                      <span className="ml-auto text-xs text-ink-500">→ {otherName || '未知'}</span>
+                      <span className="ml-auto text-xs text-ink-500">→ {otherEntityLabel}</span>
                     </button>
                   )
                 })}
@@ -117,8 +135,11 @@ export default function DetailPanel({
     const event = project.events.find((item) => item.id === selection.id)
     if (event) {
       const relatedNames = event.relatedEntityIds
-        .map((id) => project.entities.find((entity) => entity.id === id)?.name)
-        .filter(Boolean)
+        .map((id) => project.entities.find((entity) => entity.id === id))
+        .filter((entity): entity is (typeof project.entities)[number] => Boolean(entity))
+        .map((entity) =>
+          formatEntityLabel(entity, project.entities, template.entityTypeLabels[entity.type]),
+        )
         .join('、')
 
       body = (
@@ -152,8 +173,8 @@ export default function DetailPanel({
   if (selection?.kind === 'entityRelation') {
     const relation = project.entityRelations.find((item) => item.id === selection.id)
     if (relation) {
-      const source = project.entities.find((item) => item.id === relation.sourceId)?.name
-      const target = project.entities.find((item) => item.id === relation.targetId)?.name
+      const source = project.entities.find((item) => item.id === relation.sourceId)
+      const target = project.entities.find((item) => item.id === relation.targetId)
 
       body = (
         <div className="space-y-5">
@@ -166,7 +187,12 @@ export default function DetailPanel({
               <h3 className="font-serif text-2xl font-semibold">{relation.type}</h3>
             </div>
           </div>
-          <Field label="关系两端" value={`${source || '未知'} → ${target || '未知'}`} />
+          <Field
+            label="关系两端"
+            value={`${source ? formatEntityLabel(source, project.entities, template.entityTypeLabels[source.type]) : '未知'} → ${
+              target ? formatEntityLabel(target, project.entities, template.entityTypeLabels[target.type]) : '未知'
+            }`}
+          />
           <Field label="说明" value={relation.description} />
         </div>
       )
@@ -176,8 +202,8 @@ export default function DetailPanel({
   if (selection?.kind === 'eventLink') {
     const link = project.eventLinks.find((item) => item.id === selection.id)
     if (link) {
-      const source = project.events.find((item) => item.id === link.sourceEventId)?.title
-      const target = project.events.find((item) => item.id === link.targetEventId)?.title
+      const source = project.events.find((item) => item.id === link.sourceEventId)
+      const target = project.events.find((item) => item.id === link.targetEventId)
 
       body = (
         <div className="space-y-5">
@@ -190,7 +216,12 @@ export default function DetailPanel({
               <h3 className="font-serif text-2xl font-semibold">{link.type}</h3>
             </div>
           </div>
-          <Field label="连接两端" value={`${source || '未知'} → ${target || '未知'}`} />
+          <Field
+            label="连接两端"
+            value={`${source ? formatEventOptionLabel(source) : '未知'} → ${
+              target ? formatEventOptionLabel(target) : '未知'
+            }`}
+          />
           <Field label="说明" value={link.description} />
         </div>
       )

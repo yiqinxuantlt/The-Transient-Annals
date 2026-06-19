@@ -6,6 +6,11 @@ import EditorModal from '../components/EditorModal'
 import EntityCard from '../components/EntityCard'
 import { ArchiveEmptyState, ArchivePageHeader, ArchiveToolbar } from '../components/archive'
 import { useProject } from '../hooks/useProject'
+import {
+  formatEntityOptionLabel,
+  formatEntitySecondaryLabel,
+  hasDuplicateEntityName,
+} from '../lib/recordDisplay'
 import { useFushengluStore } from '../store/useFushengluStore'
 import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection, Entity, EntityDraft, EntityType } from '../types'
@@ -182,6 +187,11 @@ export default function EntitiesPage() {
                 key={entity.id}
                 entity={entity}
                 typeLabel={template.entityTypeLabels[entity.type]}
+                disambiguationLabel={
+                  hasDuplicateEntityName(entity, project.entities)
+                    ? formatEntitySecondaryLabel(entity, template.entityTypeLabels[entity.type])
+                    : undefined
+                }
                 selected={selection?.kind === 'entity' && selection.id === entity.id}
                 onSelect={() => setSelection({ kind: 'entity', id: entity.id })}
                 onEdit={() => openEdit(entity)}
@@ -222,7 +232,7 @@ export default function EntitiesPage() {
             >
               {project.entities.map((entity) => (
                 <option key={entity.id} value={entity.id}>
-                  {entity.name}
+                  {formatEntityOptionLabel(entity, project.entities, template.entityTypeLabels[entity.type])}
                 </option>
               ))}
             </select>
@@ -235,7 +245,7 @@ export default function EntitiesPage() {
             >
               {project.entities.map((entity) => (
                 <option key={entity.id} value={entity.id}>
-                  {entity.name}
+                  {formatEntityOptionLabel(entity, project.entities, template.entityTypeLabels[entity.type])}
                 </option>
               ))}
             </select>

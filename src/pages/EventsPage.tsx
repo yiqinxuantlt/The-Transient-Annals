@@ -5,6 +5,12 @@ import EditorModal from '../components/EditorModal'
 import EventCard from '../components/EventCard'
 import { ArchiveEmptyState, ArchivePageHeader, ArchiveToolbar } from '../components/archive'
 import { useProject } from '../hooks/useProject'
+import {
+  formatEntityLabel,
+  formatEntityOptionLabel,
+  formatEventOptionLabel,
+  sortedEventsForDisplay,
+} from '../lib/recordDisplay'
 import { useFushengluStore } from '../store/useFushengluStore'
 import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection, StoryEvent, StoryEventDraft } from '../types'
@@ -71,12 +77,12 @@ export default function EventsPage() {
   )
   const [linkDraft, setLinkDraft] = useState(initialLink)
 
-  const filteredEvents = project.events
-    .filter((event) => {
+  const filteredEvents = sortedEventsForDisplay(
+    project.events.filter((event) => {
       const text = `${event.title} ${event.timeLabel} ${event.location || ''} ${event.tags.join(' ')}`
       return text.toLowerCase().includes(query.toLowerCase())
-    })
-    .sort((a, b) => a.order - b.order)
+    }),
+  )
 
   const openCreate = () => {
     setEditingId(null)
@@ -162,8 +168,11 @@ export default function EventsPage() {
           <div className="mt-5 grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
             {filteredEvents.map((event) => {
               const names = event.relatedEntityIds
-                .map((id) => project.entities.find((entity) => entity.id === id)?.name)
-                .filter(Boolean) as string[]
+                .map((id) => project.entities.find((entity) => entity.id === id))
+                .filter((entity): entity is (typeof project.entities)[number] => Boolean(entity))
+                .map((entity) =>
+                  formatEntityLabel(entity, project.entities, template.entityTypeLabels[entity.type]),
+                )
 
               return (
                 <EventCard
@@ -211,7 +220,7 @@ export default function EventsPage() {
             >
               {project.events.map((event) => (
                 <option key={event.id} value={event.id}>
-                  {event.title}
+                  {formatEventOptionLabel(event)}
                 </option>
               ))}
             </select>
@@ -224,7 +233,7 @@ export default function EventsPage() {
             >
               {project.events.map((event) => (
                 <option key={event.id} value={event.id}>
-                  {event.title}
+                  {formatEventOptionLabel(event)}
                 </option>
               ))}
             </select>
@@ -381,7 +390,7 @@ export default function EventsPage() {
                     checked={draft.relatedEntityIds.includes(entity.id)}
                     onChange={() => toggleRelatedEntity(entity.id)}
                   />
-                  {entity.name}
+                  {formatEntityOptionLabel(entity, project.entities, template.entityTypeLabels[entity.type])}
                 </label>
               ))}
             </div>

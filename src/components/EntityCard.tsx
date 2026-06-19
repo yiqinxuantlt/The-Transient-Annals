@@ -13,13 +13,22 @@ const entityTypeLabel: Record<Entity['type'], string> = {
 type Props = {
   entity: Entity
   typeLabel?: string
+  disambiguationLabel?: string
   selected?: boolean
   onSelect: () => void
   onEdit: () => void
   onDelete: () => void
 }
 
-export default function EntityCard({ entity, typeLabel, selected, onSelect, onEdit, onDelete }: Props) {
+export default function EntityCard({
+  entity,
+  typeLabel,
+  disambiguationLabel,
+  selected,
+  onSelect,
+  onEdit,
+  onDelete,
+}: Props) {
   return (
     <article
       className={[
@@ -32,6 +41,9 @@ export default function EntityCard({ entity, typeLabel, selected, onSelect, onEd
           <div>
             <p className="text-xs text-ink-500">{typeLabel || entityTypeLabel[entity.type]}</p>
             <h3 className="mt-1 font-serif text-xl font-semibold text-ink-900">{entity.name}</h3>
+            {disambiguationLabel ? (
+              <p className="mt-1 text-xs text-cinnabar">{disambiguationLabel}</p>
+            ) : null}
           </div>
           <AvatarBadge entity={entity} />
         </div>

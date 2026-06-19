@@ -559,10 +559,14 @@ body::before {
   }
 
   .timeline-left-cell {
-    display: none;
+    grid-column: 3;
+    display: flex;
+    justify-content: flex-start;
+    padding: 0.25rem 0 0.25rem 1.2rem;
   }
 
   .timeline-right-cell {
+    grid-column: 3;
     padding: 0.25rem 0 0.25rem 1.2rem;
   }
 
