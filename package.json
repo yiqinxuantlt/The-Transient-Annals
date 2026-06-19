@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "dist-electron/main.cjs",
   "scripts": {
     "dev": "concurrently -k -n api,web -c yellow,cyan \"npm:dev:api\" \"npm:dev:web\"",
     "dev:web": "vite",
@@ -11,7 +12,45 @@
     "build": "tsc -b && tsc -p server/tsconfig.json && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "desktop:build-main": "esbuild electron/main.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist-electron/main.cjs --external:electron",
+    "desktop:build-renderer": "cross-env VITE_DESKTOP=true VITE_API_BASE_URL=http://127.0.0.1:4177/api vite build",
+    "desktop:build": "tsc -b && tsc -p server/tsconfig.json && npm run desktop:build-main && npm run desktop:build-renderer",
+    "desktop:start": "electron .",
+    "desktop:dev": "concurrently -k -n web,electron -c cyan,magenta \"cross-env VITE_DESKTOP=true VITE_API_BASE_URL=http://127.0.0.1:4177/api npm:dev:web\" \"wait-on http://127.0.0.1:5173 && npm run desktop:build-main && cross-env FUSHENGLU_ELECTRON_DEV_SERVER_URL=http://127.0.0.1:5173 npm run desktop:start\"",
+    "desktop:dist": "npm run desktop:build && electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.fushenglu.desktop",
+    "productName": "Fushenglu",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "dist-electron/**",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "dist-electron/main.cjs"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Fushenglu"
+    }
   },
   "dependencies": {
     "@dagrejs/dagre": "^3.0.0",
@@ -38,6 +77,10 @@
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
     "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.1",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -49,6 +92,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
-    "vitest": "^4.0.3"
+    "vitest": "^4.0.3",
+    "wait-on": "^9.0.10"
   }
 }
