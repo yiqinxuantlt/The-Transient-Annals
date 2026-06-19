@@ -10,6 +10,7 @@ import ReactFlow, {
   Position,
   useEdgesState,
   useNodesState,
+  useUpdateNodeInternals,
   type Connection,
   type Edge,
   type Node,
@@ -18,7 +19,10 @@ import ReactFlow, {
 } from 'reactflow'
 import type {
   DetailSelection,
+  EdgeArrowStyle,
+  EdgeLineCap,
   EdgeTone,
+  EdgeType,
   EdgeVisualStyle,
   Entity,
   FushengProject,
@@ -184,11 +188,47 @@ const toneColor: Record<EdgeTone, string> = {
   ink: 'rgb(var(--ink-700))',
 }
 
+const colorPattern = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
+
 const dashByLineStyle = {
   solid: undefined,
   dashed: '8 7',
   dotted: '2 8',
+  custom: '10 5',
 } satisfies Record<NonNullable<EdgeVisualStyle['lineStyle']>, string | undefined>
+
+type ResolvedEdgeVisual = {
+  lineStyle: NonNullable<EdgeVisualStyle['lineStyle']>
+  tone: EdgeTone
+  edgeType: EdgeType
+  lineWidth: number
+  animated: boolean
+  customColor?: string
+  opacity: number
+  dashLength: number
+  dashGap: number
+  arrow: EdgeArrowStyle
+  lineCap: EdgeLineCap
+  labelVisible: boolean
+  shadow: boolean
+  color: string
+  dash?: string
+}
+
+function clamp(value: number | undefined, min: number, max: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback
+  return Math.min(max, Math.max(min, value as number))
+}
+
+function dashForLineStyle(
+  lineStyle: NonNullable<EdgeVisualStyle['lineStyle']>,
+  dashLength: number,
+  dashGap: number,
+): string | undefined {
+  if (lineStyle === 'solid') return undefined
+  if (lineStyle === 'dashed' || lineStyle === 'custom') return `${dashLength} ${dashGap}`
+  return `${Math.max(1, Math.min(6, dashLength))} ${dashGap}`
+}
 
 function isConflictRelation(type: string): boolean {
   return /对立|冲突|战争|敌对|背叛|对抗/.test(type)
@@ -208,7 +248,7 @@ function visualForEdge(
   type: string,
   fallbackTone: EdgeTone,
   style?: EdgeVisualStyle,
-): Required<EdgeVisualStyle> & { color: string; dash?: string } {
+): ResolvedEdgeVisual {
   const inferredDashed =
     type.includes('隐瞒') ||
     type.includes('冲突') ||
@@ -219,13 +259,17 @@ function visualForEdge(
   const lineStyle = style?.lineStyle || (inferredDashed ? 'dashed' : 'solid')
   const tone = style?.tone || fallbackTone
   const edgeType = style?.edgeType || inferEdgeType(type)
-  const lineWidth = style?.lineWidth || 2
+  const lineWidth = clamp(style?.lineWidth, 0.5, 12, 2)
   const animated =
     style?.animated ??
     (type.includes('伏笔') ||
       type.includes('推动') ||
       type.includes('隐瞒') ||
       isConflictRelation(type))
+  const dashLength = clamp(style?.dashLength, 0, 32, lineStyle === 'dotted' ? 2 : 8)
+  const dashGap = clamp(style?.dashGap, 0, 32, lineStyle === 'dotted' ? 8 : 7)
+  const customColor = style?.customColor && colorPattern.test(style.customColor) ? style.customColor : undefined
+  const color = customColor || toneColor[tone]
 
   return {
     lineStyle,
@@ -233,8 +277,19 @@ function visualForEdge(
     edgeType,
     lineWidth,
     animated,
-    color: toneColor[tone],
-    dash: dashByLineStyle[lineStyle],
+    customColor,
+    opacity: clamp(style?.opacity, 0.1, 1, 1),
+    dashLength,
+    dashGap,
+    arrow: style?.arrow || 'target',
+    lineCap: style?.lineCap || 'round',
+    labelVisible: style?.labelVisible ?? true,
+    shadow: style?.shadow ?? true,
+    color,
+    dash:
+      style?.dashLength != null || style?.dashGap != null
+        ? dashForLineStyle(lineStyle, dashLength, dashGap)
+        : dashByLineStyle[lineStyle],
   }
 }
 
@@ -247,27 +302,34 @@ function graphEdge(
   style?: EdgeVisualStyle,
 ): Edge {
   const visual = visualForEdge(label, fallbackTone, style)
+  const marker = { type: MarkerType.ArrowClosed, color: visual.color }
 
   return {
     id,
     source,
     target,
-    label,
-    type: visual.edgeType,
+    ...(visual.labelVisible ? { label } : {}),
+    type: visual.edgeType === 'bezier' ? 'default' : visual.edgeType,
     animated: visual.animated,
     interactionWidth: 24,
-    markerEnd: { type: MarkerType.ArrowClosed, color: visual.color },
+    ...(visual.arrow === 'source' || visual.arrow === 'both' ? { markerStart: marker } : {}),
+    ...(visual.arrow === 'target' || visual.arrow === 'both' ? { markerEnd: marker } : {}),
     style: {
       stroke: visual.color,
       strokeWidth: visual.lineWidth,
-      strokeDasharray: visual.dash,
-      strokeLinecap: 'round',
-      filter: 'drop-shadow(0 6px 10px rgb(var(--shadow-soft) / 0.13))',
+      strokeLinecap: visual.lineCap,
+      opacity: visual.opacity,
+      ...(visual.dash ? { strokeDasharray: visual.dash } : {}),
+      ...(visual.shadow ? { filter: 'drop-shadow(0 6px 10px rgb(var(--shadow-soft) / 0.13))' } : {}),
     },
-    labelStyle: { fill: 'rgb(var(--ink-800))', fontSize: 12, fontWeight: 700 },
-    labelBgStyle: { fill: 'rgb(var(--paper-50))', fillOpacity: 0.92 },
-    labelBgPadding: [10, 6],
-    labelBgBorderRadius: 9,
+    ...(visual.labelVisible
+      ? {
+          labelStyle: { fill: 'rgb(var(--ink-800))', fontSize: 12, fontWeight: 700 },
+          labelBgStyle: { fill: 'rgb(var(--paper-50))', fillOpacity: 0.92 },
+          labelBgPadding: [10, 6] as [number, number],
+          labelBgBorderRadius: 9,
+        }
+      : {}),
   }
 }
 
@@ -356,6 +418,7 @@ export default function GraphCanvas({
   fitViewKey,
 }: Props) {
   const flowInstanceRef = useRef<ReactFlowInstance | null>(null)
+  const updateNodeInternals = useUpdateNodeInternals()
   const graph = useMemo(
     () => buildGraph(project, mode, compact, currentYear),
     [compact, currentYear, mode, project],
@@ -379,6 +442,19 @@ export default function GraphCanvas({
     setNodes(visibleGraph.nodes)
     setEdges(visibleGraph.edges)
   }, [setEdges, setNodes, visibleGraph])
+
+  useEffect(() => {
+    const refreshInternals = () => {
+      for (const node of visibleGraph.nodes) updateNodeInternals(node.id)
+    }
+    const timers = [80, 260, 700, 1400, 2400].map((delay) =>
+      window.setTimeout(refreshInternals, delay),
+    )
+
+    return () => {
+      for (const timer of timers) window.clearTimeout(timer)
+    }
+  }, [updateNodeInternals, visibleGraph.nodes])
 
   useEffect(() => {
     const hasChain = Boolean(activeChain?.nodeIds.length || activeChain?.edgeIds.length)

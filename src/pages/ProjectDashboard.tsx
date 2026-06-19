@@ -1,5 +1,6 @@
 import { GitBranch, Network, ScrollText, UsersRound } from 'lucide-react'
 import { useState } from 'react'
+import { ReactFlowProvider } from 'reactflow'
 import { ArchivePageHeader } from '../components/archive'
 import DetailPanel from '../components/DetailPanel'
 import EventTimeline from '../components/EventTimeline'
@@ -68,7 +69,9 @@ export default function ProjectDashboard() {
               <Network className="text-jade" size={22} />
             </div>
             <div className="relative z-10 h-[430px]">
-              <GraphCanvas project={project} mode="entities" compact onSelect={setSelection} />
+              <ReactFlowProvider>
+                <GraphCanvas project={project} mode="entities" compact onSelect={setSelection} />
+              </ReactFlowProvider>
             </div>
           </div>
 

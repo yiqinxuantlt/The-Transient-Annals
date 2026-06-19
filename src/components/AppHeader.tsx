@@ -16,7 +16,7 @@ export default function AppHeader() {
           />
         </span>
         <span>
-          <span className="block font-serif text-xl font-semibold text-ink-900">浮生录</span>
+          <span className="block font-calligraphy text-2xl text-ink-900 tracking-wide">浮生录</span>
           <span className="hidden text-xs text-ink-500 sm:block">人物 · 事件 · 图谱 · 时间线</span>
         </span>
       </Link>

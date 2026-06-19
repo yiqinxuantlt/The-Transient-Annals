@@ -40,12 +40,14 @@ type StoreState = {
   projects: FushengProject[]
   theme: ThemeMode
   sidebarCollapsed: boolean
+  sidebarWidth: number
   backendStatus: BackendStatus
   hydrateFromBackend: () => Promise<void>
   setTheme: (theme: ThemeMode) => void
   toggleTheme: () => void
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
+  setSidebarWidth: (width: number) => void
   addProject: (draft: ProjectDraft) => string
   updateProjectMeta: (projectId: string, draft: ProjectDraft) => void
   deleteProject: (projectId: string) => void
@@ -237,6 +239,7 @@ export const useFushengluStore = create<StoreState>()(
         projects: sampleProjects.map(normalizeProjectForStorage),
         theme: 'light',
         sidebarCollapsed: false,
+        sidebarWidth: 288,
         backendStatus: 'checking',
 
         hydrateFromBackend: async () => {
@@ -274,6 +277,8 @@ export const useFushengluStore = create<StoreState>()(
           })),
 
         setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+
+        setSidebarWidth: (width) => set({ sidebarWidth: width }),
 
         addProject: (draft) => {
           const id = makeId('project')
@@ -641,6 +646,7 @@ export const useFushengluStore = create<StoreState>()(
         projects: state.projects.map(normalizeProjectForStorage),
         theme: state.theme,
         sidebarCollapsed: state.sidebarCollapsed,
+        sidebarWidth: state.sidebarWidth,
       }),
       migrate: (persistedState) => {
         const state = persistedState as Partial<StoreState>
@@ -649,6 +655,7 @@ export const useFushengluStore = create<StoreState>()(
           projects: normalizeProjects(state.projects),
           theme: state.theme || 'light',
           sidebarCollapsed: Boolean(state.sidebarCollapsed),
+          sidebarWidth: state.sidebarWidth || 288,
           backendStatus: 'checking',
         }
       },

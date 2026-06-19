@@ -20,11 +20,22 @@ const asyncRoute =
   }
 
 const styleSchema = z.object({
-  lineStyle: z.enum(['solid', 'dashed', 'dotted']).optional(),
+  lineStyle: z.enum(['solid', 'dashed', 'dotted', 'custom']).optional(),
   tone: z.enum(['cinnabar', 'jade', 'goldline', 'ink']).optional(),
   edgeType: z.enum(['straight', 'smoothstep', 'bezier', 'step']).optional(),
   lineWidth: z.number().min(0.5).max(12).optional(),
   animated: z.boolean().optional(),
+  customColor: z
+    .string()
+    .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)
+    .optional(),
+  opacity: z.number().min(0.1).max(1).optional(),
+  dashLength: z.number().min(0).max(32).optional(),
+  dashGap: z.number().min(0).max(32).optional(),
+  arrow: z.enum(['none', 'target', 'source', 'both']).optional(),
+  lineCap: z.enum(['round', 'butt', 'square']).optional(),
+  labelVisible: z.boolean().optional(),
+  shadow: z.boolean().optional(),
 })
 
 const positionSchema = z.object({

@@ -1,8 +1,9 @@
 import { Building2, MapPin, UserRound } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import type { Entity } from '../types'
 
 type Props = {
-  entity: Pick<Entity, 'name' | 'type' | 'avatarUrl'>
+  entity: Pick<Entity, 'name' | 'type' | 'avatarUrl' | 'avatarCrop'>
   size?: 'sm' | 'md' | 'lg'
 }
 
@@ -14,6 +15,24 @@ const sizeClass = {
 
 export default function AvatarBadge({ entity, size = 'md' }: Props) {
   const initial = entity.name.trim().slice(0, 1) || '录'
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !entity.avatarCrop || !entity.avatarUrl) return
+
+    const img = new Image()
+    img.onload = () => {
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      const { x, y, width, height } = entity.avatarCrop!
+      canvas.width = width
+      canvas.height = height
+      ctx.drawImage(img, x, y, width, height, 0, 0, width, height)
+    }
+    img.src = entity.avatarUrl
+  }, [entity.avatarUrl, entity.avatarCrop])
 
   return (
     <span
@@ -23,8 +42,18 @@ export default function AvatarBadge({ entity, size = 'md' }: Props) {
       ].join(' ')}
       aria-hidden="true"
     >
-      {entity.avatarUrl ? (
-        <img src={entity.avatarUrl} alt="" className="h-full w-full object-cover" />
+      {entity.avatarCrop && entity.avatarUrl ? (
+        <canvas
+          ref={canvasRef}
+          className="h-full w-full object-cover"
+        />
+      ) : entity.avatarUrl ? (
+        <img
+          src={entity.avatarUrl}
+          alt=""
+          className="h-full w-full object-cover"
+          draggable={false}
+        />
       ) : entity.type === 'organization' ? (
         <Building2 size={size === 'lg' ? 24 : 18} className="text-jade" />
       ) : entity.type === 'place' ? (

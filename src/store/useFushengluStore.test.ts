@@ -55,11 +55,19 @@ describe('normalizeProjectForStorage', () => {
         {
           ...relation,
           style: {
-            lineStyle: 'dotted',
+            lineStyle: 'custom',
             tone: 'ink',
             edgeType: 'step',
             lineWidth: 4.5,
             animated: true,
+            customColor: '#3366aa',
+            opacity: 0.65,
+            dashLength: 14,
+            dashGap: 5,
+            arrow: 'both',
+            lineCap: 'square',
+            labelVisible: false,
+            shadow: false,
           },
         },
       ],
@@ -67,11 +75,19 @@ describe('normalizeProjectForStorage', () => {
 
     expect(normalized.schemaVersion).toBe(FUSHENGLU_SCHEMA_VERSION)
     expect(normalized.entityRelations[0]?.style).toEqual({
-      lineStyle: 'dotted',
+      lineStyle: 'custom',
       tone: 'ink',
       edgeType: 'step',
       lineWidth: 4.5,
       animated: true,
+      customColor: '#3366aa',
+      opacity: 0.65,
+      dashLength: 14,
+      dashGap: 5,
+      arrow: 'both',
+      lineCap: 'square',
+      labelVisible: false,
+      shadow: false,
     })
   })
 

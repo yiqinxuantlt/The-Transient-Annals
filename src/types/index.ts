@@ -1,7 +1,9 @@
 export type EntityType = 'person' | 'character' | 'organization' | 'place' | 'other'
-export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted'
+export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted' | 'custom'
 export type EdgeTone = 'cinnabar' | 'jade' | 'goldline' | 'ink'
 export type EdgeType = 'straight' | 'smoothstep' | 'bezier' | 'step'
+export type EdgeArrowStyle = 'none' | 'target' | 'source' | 'both'
+export type EdgeLineCap = 'round' | 'butt' | 'square'
 export type BackendStatus = 'checking' | 'online' | 'offline'
 export type ProjectTemplateId = 'history' | 'fiction'
 
@@ -16,6 +18,21 @@ export type EdgeVisualStyle = {
   edgeType?: EdgeType
   lineWidth?: number
   animated?: boolean
+  customColor?: string
+  opacity?: number
+  dashLength?: number
+  dashGap?: number
+  arrow?: EdgeArrowStyle
+  lineCap?: EdgeLineCap
+  labelVisible?: boolean
+  shadow?: boolean
+}
+
+export type AvatarCrop = {
+  x: number
+  y: number
+  width: number
+  height: number
 }
 
 export type Entity = {
@@ -31,6 +48,7 @@ export type Entity = {
   roleArc?: string
   description?: string
   avatarUrl?: string
+  avatarCrop?: AvatarCrop
   tags: string[]
   /** 该实体在叙事中活跃/相关的起始年份（负数表示公元前） */
   startYear?: number

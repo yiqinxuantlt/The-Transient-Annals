@@ -7,8 +7,9 @@ import type {
   ProjectTemplateId,
 } from '../types'
 
-export const FUSHENGLU_SCHEMA_VERSION = 5
+export const FUSHENGLU_SCHEMA_VERSION = 6
 export const LEGACY_BROKEN_PROJECT_ID = 'project-zizhi-tongjian'
+const colorPattern = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
 
 export type FushengDatabase = {
   schemaVersion: number
@@ -44,6 +45,14 @@ export function normalizeEdgeStyle(style?: EdgeVisualStyle): EdgeVisualStyle | u
     edgeType: style.edgeType,
     lineWidth: Number.isFinite(style.lineWidth) ? style.lineWidth : undefined,
     animated: style.animated,
+    customColor: style.customColor && colorPattern.test(style.customColor) ? style.customColor : undefined,
+    opacity: Number.isFinite(style.opacity) ? style.opacity : undefined,
+    dashLength: Number.isFinite(style.dashLength) ? style.dashLength : undefined,
+    dashGap: Number.isFinite(style.dashGap) ? style.dashGap : undefined,
+    arrow: style.arrow,
+    lineCap: style.lineCap,
+    labelVisible: style.labelVisible,
+    shadow: style.shadow,
   }
 }
 

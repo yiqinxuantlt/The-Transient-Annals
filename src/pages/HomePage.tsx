@@ -1,5 +1,6 @@
 ﻿import { ArrowRight, BookOpen, GitBranch, Network, ScrollText, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { ReactFlowProvider } from 'reactflow'
 import GraphCanvas from '../components/GraphCanvas'
 import EventTimeline from '../components/EventTimeline'
 import { useFushengluStore } from '../store/useFushengluStore'
@@ -15,7 +16,7 @@ export default function HomePage() {
             <Sparkles size={16} className="text-cinnabar" />
             叙事图谱 · 创作档案 · 研究工作台
           </p>
-          <h1 className="mt-8 font-serif text-5xl font-semibold leading-tight text-ink-900 sm:text-6xl">
+          <h1 className="mt-8 font-calligraphy text-6xl leading-tight text-ink-900 sm:text-7xl tracking-wide">
             浮生录
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-ink-700">
@@ -50,7 +51,9 @@ export default function HomePage() {
               <Network className="text-jade" size={24} />
             </div>
             <div className="relative z-10 h-[420px]">
-              <GraphCanvas project={firstProject} mode="entities" compact />
+              <ReactFlowProvider>
+                <GraphCanvas project={firstProject} mode="entities" compact />
+              </ReactFlowProvider>
             </div>
           </div>
         ) : null}

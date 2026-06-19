@@ -7,6 +7,7 @@ export default {
       fontFamily: {
         serif: ['"Noto Serif SC"', '"Songti SC"', 'STSong', 'serif'],
         sans: ['"Noto Sans SC"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],
+        calligraphy: ['"Ma Shan Zheng"', '"LiSu"', 'STLiti', 'cursive'],
       },
       colors: {
         paper: {

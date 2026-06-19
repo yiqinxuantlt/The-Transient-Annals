@@ -44,11 +44,19 @@ const baseProject = {
       targetId: 'entity-2',
       type: '对立',
       style: {
-        lineStyle: 'dashed',
+        lineStyle: 'custom',
         tone: 'ink',
         edgeType: 'step',
         lineWidth: 4,
         animated: true,
+        customColor: '#8844aa',
+        opacity: 0.55,
+        dashLength: 12,
+        dashGap: 4,
+        arrow: 'both',
+        lineCap: 'square',
+        labelVisible: false,
+        shadow: false,
       },
       startYear: -206,
       endYear: -202,
@@ -89,11 +97,19 @@ describe('server schema normalization', () => {
     expect(project.events[0]?.startYear).toBe(-206)
     expect(project.entityRelations[0]?.startYear).toBe(-206)
     expect(project.entityRelations[0]?.style).toEqual({
-      lineStyle: 'dashed',
+      lineStyle: 'custom',
       tone: 'ink',
       edgeType: 'step',
       lineWidth: 4,
       animated: true,
+      customColor: '#8844aa',
+      opacity: 0.55,
+      dashLength: 12,
+      dashGap: 4,
+      arrow: 'both',
+      lineCap: 'square',
+      labelVisible: false,
+      shadow: false,
     })
   })
 

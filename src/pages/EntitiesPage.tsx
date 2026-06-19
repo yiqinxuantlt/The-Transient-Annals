@@ -1,6 +1,7 @@
 import { ImagePlus, Plus, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import AvatarBadge from '../components/AvatarBadge'
+import AvatarCropper from '../components/AvatarCropper'
 import DetailPanel from '../components/DetailPanel'
 import EditorModal from '../components/EditorModal'
 import EntityCard from '../components/EntityCard'
@@ -13,7 +14,7 @@ import {
 } from '../lib/recordDisplay'
 import { useFushengluStore } from '../store/useFushengluStore'
 import { getProjectTemplate } from '../templates/projectTemplates'
-import type { DetailSelection, Entity, EntityDraft, EntityType } from '../types'
+import type { AvatarCrop, DetailSelection, Entity, EntityDraft, EntityType } from '../types'
 
 const emptyEntity = (type: EntityType, tags: string[]): EntityDraft => ({
   name: '',
@@ -27,6 +28,7 @@ const emptyEntity = (type: EntityType, tags: string[]): EntityDraft => ({
   roleArc: '',
   description: '',
   avatarUrl: '',
+  avatarCrop: undefined,
   tags,
 })
 
@@ -48,6 +50,7 @@ const toDraft = (entity: Entity): EntityDraft => ({
   roleArc: entity.roleArc || '',
   description: entity.description || '',
   avatarUrl: entity.avatarUrl || '',
+  avatarCrop: entity.avatarCrop,
   tags: entity.tags,
 })
 
@@ -69,6 +72,8 @@ export default function EntitiesPage() {
     emptyEntity(template.defaultEntityType, template.defaultEntityTags),
   )
   const [tagText, setTagText] = useState('')
+  const [showCropper, setShowCropper] = useState(false)
+  const [tempImageUrl, setTempImageUrl] = useState('')
   const initialRelation = useMemo(
     () => ({
       sourceId: project.entities[0]?.id || '',
@@ -89,6 +94,8 @@ export default function EntitiesPage() {
     setEditingId(null)
     setDraft(emptyEntity(template.defaultEntityType, template.defaultEntityTags))
     setTagText(template.defaultEntityTags.join('，'))
+    setShowCropper(false)
+    setTempImageUrl('')
     setModalOpen(true)
   }
 
@@ -96,6 +103,8 @@ export default function EntitiesPage() {
     setEditingId(entity.id)
     setDraft(toDraft(entity))
     setTagText(entity.tags.join('，'))
+    setShowCropper(false)
+    setTempImageUrl('')
     setModalOpen(true)
   }
 
@@ -115,6 +124,8 @@ export default function EntitiesPage() {
       setSelection({ kind: 'entity', id })
     }
     setModalOpen(false)
+    setShowCropper(false)
+    setTempImageUrl('')
   }
 
   const uploadAvatar = (file?: File) => {
@@ -132,12 +143,34 @@ export default function EntitiesPage() {
 
     const reader = new FileReader()
     reader.onload = () => {
+      const imageUrl = typeof reader.result === 'string' ? reader.result : ''
+      setTempImageUrl(imageUrl)
+      setShowCropper(true)
+      // 先设置图片URL，裁剪完成后再更新draft
       setDraft((value) => ({
         ...value,
-        avatarUrl: typeof reader.result === 'string' ? reader.result : '',
+        avatarUrl: imageUrl,
+        avatarCrop: undefined,
       }))
     }
     reader.readAsDataURL(file)
+  }
+
+  const handleCropChange = (crop: AvatarCrop) => {
+    setDraft((value) => ({
+      ...value,
+      avatarCrop: crop,
+    }))
+  }
+
+  const removeAvatar = () => {
+    setDraft((value) => ({
+      ...value,
+      avatarUrl: '',
+      avatarCrop: undefined,
+    }))
+    setShowCropper(false)
+    setTempImageUrl('')
   }
 
   const submitRelation = () => {
@@ -309,7 +342,11 @@ export default function EntitiesPage() {
         open={modalOpen}
         title={editingId ? `编辑${template.entitySingular}档案` : `新增${template.entitySingular}档案`}
         submitLabel={editingId ? '保存修改' : `创建${template.entitySingular}`}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false)
+          setShowCropper(false)
+          setTempImageUrl('')
+        }}
         onSubmit={saveEntity}
       >
         <div className="grid gap-4 md:grid-cols-2">
@@ -321,6 +358,7 @@ export default function EntitiesPage() {
                   name: draft.name || '人物',
                   type: draft.type,
                   avatarUrl: draft.avatarUrl,
+                  avatarCrop: draft.avatarCrop,
                 }}
                 size="lg"
               />
@@ -338,7 +376,7 @@ export default function EntitiesPage() {
                 {draft.avatarUrl ? (
                   <button
                     type="button"
-                    onClick={() => setDraft((value) => ({ ...value, avatarUrl: '' }))}
+                    onClick={removeAvatar}
                     className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cinnabar/25 bg-cinnabar/10 px-4 text-sm text-cinnabar transition hover:bg-cinnabar/15"
                   >
                     <X size={17} />
@@ -347,6 +385,27 @@ export default function EntitiesPage() {
                 ) : null}
               </div>
             </div>
+
+            {/* 图片裁剪区域 */}
+            {showCropper && tempImageUrl && (
+              <div className="mt-4 rounded-lg border border-goldline/25 bg-paper-50/70 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-medium text-ink-800">调整头像显示区域</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowCropper(false)}
+                    className="text-xs text-ink-500 transition hover:text-ink-700"
+                  >
+                    完成裁剪
+                  </button>
+                </div>
+                <AvatarCropper
+                  imageUrl={tempImageUrl}
+                  initialCrop={draft.avatarCrop}
+                  onCropChange={handleCropChange}
+                />
+              </div>
+            )}
           </div>
           <label className="grid gap-2 text-sm">
             {template.entityFields.find((field) => field.key === 'name')?.label || '名称'}
