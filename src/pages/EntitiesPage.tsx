@@ -4,6 +4,7 @@ import AvatarBadge from '../components/AvatarBadge'
 import DetailPanel from '../components/DetailPanel'
 import EditorModal from '../components/EditorModal'
 import EntityCard from '../components/EntityCard'
+import { ArchiveEmptyState, ArchivePageHeader, ArchiveToolbar } from '../components/archive'
 import { useProject } from '../hooks/useProject'
 import { useFushengluStore } from '../store/useFushengluStore'
 import { getProjectTemplate } from '../templates/projectTemplates'
@@ -150,56 +151,66 @@ export default function EntitiesPage() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <section>
-        <div className="rounded-lg border border-ink-900/10 bg-paper-50 p-6 shadow-soft">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-sm text-ink-500">{template.pages.entities.eyebrow}</p>
-              <h2 className="mt-1 font-serif text-3xl font-semibold">{template.pages.entities.title}</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-ink-700">
-                {template.pages.entities.description}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={openCreate}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-ink-900 px-5 text-paper-50 shadow-soft transition hover:bg-ink-700"
-            >
+      <section className="min-w-0">
+        <ArchivePageHeader
+          eyebrow={template.pages.entities.eyebrow}
+          title={template.pages.entities.title}
+          description={template.pages.entities.description}
+          ribbonLabel={template.id === 'history' ? '人物入卷' : '角色入卷'}
+          sealLabel={template.id === 'history' ? '人物' : '角色'}
+          actions={
+            <button type="button" onClick={openCreate} className="archive-primary-button">
               <Plus size={18} />
               {template.pages.entities.addLabel}
             </button>
-          </div>
+          }
+        />
+
+        <ArchiveToolbar>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={template.pages.entities.search}
-            className="mt-6 min-h-11 w-full rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm outline-none focus:border-goldline"
+            className="archive-input w-full"
           />
-        </div>
+        </ArchiveToolbar>
 
-        <div className="mt-5 grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-          {filteredEntities.map((entity) => (
-            <EntityCard
-              key={entity.id}
-              entity={entity}
-              typeLabel={template.entityTypeLabels[entity.type]}
-              selected={selection?.kind === 'entity' && selection.id === entity.id}
-              onSelect={() => setSelection({ kind: 'entity', id: entity.id })}
-              onEdit={() => openEdit(entity)}
-              onDelete={() => {
-                if (window.confirm(`确认删除「${entity.name}」？相关人物关系也会移除。`)) {
-                  deleteEntity(project.id, entity.id)
-                  setSelection(null)
-                }
-              }}
+        {filteredEntities.length > 0 ? (
+          <div className="mt-5 grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+            {filteredEntities.map((entity) => (
+              <EntityCard
+                key={entity.id}
+                entity={entity}
+                typeLabel={template.entityTypeLabels[entity.type]}
+                selected={selection?.kind === 'entity' && selection.id === entity.id}
+                onSelect={() => setSelection({ kind: 'entity', id: entity.id })}
+                onEdit={() => openEdit(entity)}
+                onDelete={() => {
+                  if (window.confirm(`确认删除「${entity.name}」？相关人物关系也会移除。`)) {
+                    deleteEntity(project.id, entity.id)
+                    setSelection(null)
+                  }
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-5">
+            <ArchiveEmptyState
+              title="暂无匹配人物"
+              description={
+                query
+                  ? '清空搜索条件后再查看完整人物谱。'
+                  : '先新增人物，再补充身份、阵营和关系。'
+              }
             />
-          ))}
-        </div>
+          </div>
+        )}
       </section>
 
       <div className="space-y-5">
         <DetailPanel project={project} selection={selection} />
-        <section className="rounded-lg border border-ink-900/10 bg-paper-50 p-5 shadow-soft">
+        <section className="archive-card paper-grain rounded-lg border border-goldline/25 p-5 shadow-soft">
           <h3 className="font-serif text-xl font-semibold">关系快记</h3>
           <div className="mt-4 grid gap-3">
             <select
@@ -207,7 +218,7 @@ export default function EntitiesPage() {
               onChange={(event) =>
                 setRelationDraft((value) => ({ ...value, sourceId: event.target.value }))
               }
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm outline-none"
+              className="archive-input w-full text-sm"
             >
               {project.entities.map((entity) => (
                 <option key={entity.id} value={entity.id}>
@@ -220,7 +231,7 @@ export default function EntitiesPage() {
               onChange={(event) =>
                 setRelationDraft((value) => ({ ...value, targetId: event.target.value }))
               }
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm outline-none"
+              className="archive-input w-full text-sm"
             >
               {project.entities.map((entity) => (
                 <option key={entity.id} value={entity.id}>
@@ -233,7 +244,7 @@ export default function EntitiesPage() {
               onChange={(event) =>
                 setRelationDraft((value) => ({ ...value, type: event.target.value }))
               }
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 text-sm outline-none"
+              className="archive-input w-full text-sm"
             >
               {template.relationTypes.map((type) => (
                 <option key={type} value={type}>
@@ -252,7 +263,7 @@ export default function EntitiesPage() {
             <button
               type="button"
               onClick={submitRelation}
-              className="min-h-11 rounded-lg bg-ink-900 px-4 text-sm text-paper-50 transition hover:bg-ink-700"
+              className="archive-primary-button text-sm"
             >
               添加关系
             </button>
@@ -261,7 +272,7 @@ export default function EntitiesPage() {
             {project.entityRelations.map((relation) => (
               <div
                 key={relation.id}
-                className="flex items-center justify-between gap-2 rounded-lg bg-paper-100/65 px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-2 rounded-lg border border-goldline/15 bg-paper-100/65 px-3 py-2 text-sm"
               >
                 <button
                   type="button"

@@ -21,8 +21,8 @@ export default function EventCard({
   return (
     <article
       className={[
-        'rounded-lg border bg-paper-50 p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:shadow-archive',
-        selected ? 'border-cinnabar/50 ring-2 ring-cinnabar/10' : 'border-ink-900/10',
+        'archive-card paper-grain rounded-lg border p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:shadow-archive',
+        selected ? 'border-cinnabar/50 ring-2 ring-cinnabar/10' : 'border-goldline/18',
       ].join(' ')}
     >
       <button type="button" onClick={onSelect} className="block w-full text-left">
@@ -54,7 +54,10 @@ export default function EventCard({
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {event.tags.slice(0, 3).map((tag) => (
-            <span key={tag} className="rounded-full bg-jade/10 px-3 py-1 text-xs text-ink-700">
+            <span
+              key={tag}
+              className="inline-flex min-h-7 items-center rounded-full border border-jade/25 bg-jade/10 px-3 text-xs text-ink-700"
+            >
               {tag}
             </span>
           ))}

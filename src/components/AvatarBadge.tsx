@@ -18,7 +18,7 @@ export default function AvatarBadge({ entity, size = 'md' }: Props) {
   return (
     <span
       className={[
-        'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-goldline/35 bg-goldline/14 font-serif font-semibold text-ink-900 shadow-soft',
+        'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-goldline/35 bg-goldline/14 font-serif font-semibold text-ink-900 shadow-soft ring-1 ring-paper-50/60',
         sizeClass[size],
       ].join(' ')}
       aria-hidden="true"

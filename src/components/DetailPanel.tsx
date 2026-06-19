@@ -2,6 +2,7 @@ import { Archive, Crosshair, GitBranch, Link2, ScrollText } from 'lucide-react'
 import { getProjectTemplate } from '../templates/projectTemplates'
 import type { DetailSelection, EntityRelation, FushengProject } from '../types'
 import AvatarBadge from './AvatarBadge'
+import { ArchiveField, ArchiveTag, SealBadge } from './archive'
 
 type Props = {
   project: FushengProject
@@ -25,26 +26,14 @@ function Tags({ tags }: { tags: string[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {tags.map((tag) => (
-        <span
-          key={tag}
-          className="inline-flex min-h-7 items-center rounded-full bg-goldline/12 px-3 text-xs text-ink-700"
-        >
-          {tag}
-        </span>
+        <ArchiveTag key={tag}>{tag}</ArchiveTag>
       ))}
     </div>
   )
 }
 
 function Field({ label, value }: { label: string; value?: string | number }) {
-  if (value === undefined || value === '') return null
-
-  return (
-    <div className="rounded-lg border border-ink-900/8 bg-paper-50/55 p-3">
-      <p className="text-xs text-ink-500">{label}</p>
-      <p className="mt-1 text-sm leading-6 text-ink-800">{value}</p>
-    </div>
-  )
+  return <ArchiveField label={label} value={value} />
 }
 
 export default function DetailPanel({
@@ -246,9 +235,7 @@ export default function DetailPanel({
             <p className="text-xs tracking-[0.22em] text-cinnabar">CASE FILE</p>
             <h2 className="mt-1 font-serif text-xl font-semibold text-ink-900">{title}</h2>
           </div>
-          <div className="seal-mark flex h-14 w-14 shrink-0 items-center justify-center rounded-sm font-serif text-xs font-semibold leading-4">
-            已归档
-          </div>
+          <SealBadge>已归档</SealBadge>
         </div>
         {body}
       </div>
