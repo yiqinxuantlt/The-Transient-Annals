@@ -25,7 +25,7 @@
       "subtitle": "整理资治通鉴中记述的历史",
       "templateId": "history",
       "category": "history",
-      "updatedAt": "2026-06-19T02:41:31.409Z",
+      "updatedAt": "2026-06-19T10:37:59.656Z",
       "entities": [],
       "events": [],
       "entityRelations": [],
@@ -42,7 +42,7 @@
       "subtitle": "以秦末楚汉为背景，整理人物联盟、战役节点与政治转折。",
       "templateId": "history",
       "category": "history",
-      "updatedAt": "2026-06-19T02:44:03.044Z",
+      "updatedAt": "2026-06-19T10:37:59.606Z",
       "entities": [
         {
           "id": "entity-liubang",
@@ -58,7 +58,9 @@
           "tags": [
             "汉军",
             "开国君主"
-          ]
+          ],
+          "startYear": -209,
+          "endYear": -195
         },
         {
           "id": "entity-xiangyu",
@@ -74,7 +76,9 @@
           "tags": [
             "楚军",
             "霸王"
-          ]
+          ],
+          "startYear": -209,
+          "endYear": -202
         },
         {
           "id": "entity-zhangliang",
@@ -88,7 +92,9 @@
           "tags": [
             "谋臣",
             "韩国旧族"
-          ]
+          ],
+          "startYear": -208,
+          "endYear": -186
         },
         {
           "id": "entity-hanxin",
@@ -103,7 +109,9 @@
           "tags": [
             "将领",
             "兵仙"
-          ]
+          ],
+          "startYear": -208,
+          "endYear": -196
         },
         {
           "id": "entity-fanzeng",
@@ -118,7 +126,9 @@
           "tags": [
             "谋士",
             "楚军"
-          ]
+          ],
+          "startYear": -208,
+          "endYear": -204
         },
         {
           "id": "entity-guanzhong",
@@ -132,7 +142,9 @@
           "tags": [
             "地缘",
             "战略"
-          ]
+          ],
+          "startYear": -207,
+          "endYear": -202
         }
       ],
       "events": [
@@ -151,7 +163,9 @@
           "tags": [
             "战役",
             "反秦"
-          ]
+          ],
+          "startYear": -208,
+          "endYear": -207
         },
         {
           "id": "event-enter-guan",
@@ -169,7 +183,9 @@
           "tags": [
             "入关",
             "民心"
-          ]
+          ],
+          "startYear": -207,
+          "endYear": -206
         },
         {
           "id": "event-hongmen",
@@ -188,7 +204,9 @@
           "tags": [
             "危机",
             "政治博弈"
-          ]
+          ],
+          "startYear": -206,
+          "endYear": -206
         },
         {
           "id": "event-hanxin-general",
@@ -205,7 +223,9 @@
           "tags": [
             "将领",
             "转折"
-          ]
+          ],
+          "startYear": -206,
+          "endYear": -205
         },
         {
           "id": "event-gaixia",
@@ -223,7 +243,9 @@
           "tags": [
             "决战",
             "终局"
-          ]
+          ],
+          "startYear": -202,
+          "endYear": -202
         }
       ],
       "entityRelations": [
@@ -235,11 +257,10 @@
           "description": "张良在战略判断和危机处置中多次辅佐刘邦。",
           "style": {
             "lineStyle": "solid",
-            "tone": "goldline",
-            "edgeType": "smoothstep",
-            "lineWidth": 2,
-            "animated": false
-          }
+            "tone": "goldline"
+          },
+          "startYear": -208,
+          "endYear": -186
         },
         {
           "id": "relation-liubang-hanxin",
@@ -251,7 +272,9 @@
             "lineStyle": "solid",
             "tone": "jade",
             "animated": true
-          }
+          },
+          "startYear": -206,
+          "endYear": -196
         },
         {
           "id": "relation-liubang-xiangyu",
@@ -260,12 +283,12 @@
           "type": "对立",
           "description": "从反秦盟友转向争夺天下的主要对手。",
           "style": {
-            "lineStyle": "solid",
+            "lineStyle": "dashed",
             "tone": "cinnabar",
-            "edgeType": "smoothstep",
-            "lineWidth": 2.5,
             "animated": true
-          }
+          },
+          "startYear": -209,
+          "endYear": -202
         },
         {
           "id": "relation-xiangyu-fanzeng",
@@ -276,7 +299,9 @@
           "style": {
             "lineStyle": "dotted",
             "tone": "ink"
-          }
+          },
+          "startYear": -208,
+          "endYear": -204
         }
       ],
       "eventLinks": [
@@ -289,7 +314,9 @@
           "style": {
             "lineStyle": "solid",
             "tone": "ink"
-          }
+          },
+          "startYear": -207,
+          "endYear": -206
         },
         {
           "id": "eventlink-enter-hongmen",
@@ -301,7 +328,9 @@
             "lineStyle": "solid",
             "tone": "cinnabar",
             "animated": true
-          }
+          },
+          "startYear": -206,
+          "endYear": -206
         },
         {
           "id": "eventlink-hanxin-gaixia",
@@ -313,7 +342,9 @@
             "lineStyle": "solid",
             "tone": "jade",
             "animated": true
-          }
+          },
+          "startYear": -205,
+          "endYear": -202
         }
       ],
       "libraryItems": [
@@ -326,7 +357,7 @@
             "史记",
             "鸿门宴"
           ],
-          "createdAt": "2026-06-18T09:04:00.795Z"
+          "createdAt": "2026-06-19T10:31:59.405Z"
         },
         {
           "id": "library-note",
@@ -337,7 +368,7 @@
             "关中",
             "政治地理"
           ],
-          "createdAt": "2026-06-18T09:04:00.795Z"
+          "createdAt": "2026-06-19T10:31:59.405Z"
         }
       ],
       "analysisNotes": [],
@@ -397,7 +428,7 @@
       "subtitle": "用于组织游戏世界观中的势力、地点、主线事件与悬念回收。",
       "templateId": "fiction",
       "category": "worldbuilding",
-      "updatedAt": "2026-06-19T02:41:31.369Z",
+      "updatedAt": "2026-06-19T10:37:59.632Z",
       "entities": [
         {
           "id": "entity-main",
@@ -673,7 +704,7 @@
             "主题",
             "结构"
           ],
-          "createdAt": "2026-06-18T09:04:00.795Z"
+          "createdAt": "2026-06-19T10:31:59.404Z"
         },
         {
           "id": "library-quote",
@@ -684,34 +715,34 @@
             "信件",
             "伏笔"
           ],
-          "createdAt": "2026-06-18T09:04:00.795Z"
+          "createdAt": "2026-06-19T10:31:59.405Z"
         }
       ],
       "analysisNotes": [],
       "entityNodePositions": {
         "entity-main": {
-          "x": 108,
-          "y": -36
+          "x": 40,
+          "y": 135
         },
         "entity-friend": {
-          "x": 680,
-          "y": 305
+          "x": 350,
+          "y": 45
         },
         "entity-mentor": {
-          "x": 360,
+          "x": 345,
           "y": 305
         },
         "entity-rival": {
-          "x": 40,
-          "y": 305
+          "x": 705,
+          "y": 145
         },
         "entity-order": {
-          "x": 40,
-          "y": 570
+          "x": 1020,
+          "y": 100
         },
         "entity-place": {
-          "x": 680,
-          "y": 40
+          "x": 720,
+          "y": 340
         }
       },
       "eventNodePositions": {
@@ -744,7 +775,7 @@
       "subtitle": "用一条身份谜团线串起人物、事件、关系与伏笔回收。",
       "templateId": "fiction",
       "category": "novel",
-      "updatedAt": "2026-06-19T02:41:31.392Z",
+      "updatedAt": "2026-06-19T10:37:59.644Z",
       "entities": [
         {
           "id": "entity-main",
@@ -1020,7 +1051,7 @@
             "主题",
             "结构"
           ],
-          "createdAt": "2026-06-18T09:04:00.795Z"
+          "createdAt": "2026-06-19T10:31:59.404Z"
         },
         {
           "id": "library-quote",
@@ -1031,7 +1062,7 @@
             "信件",
             "伏笔"
           ],
-          "createdAt": "2026-06-18T09:04:00.795Z"
+          "createdAt": "2026-06-19T10:31:59.405Z"
         }
       ],
       "analysisNotes": [],
