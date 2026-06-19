@@ -18,7 +18,7 @@ export default function ProjectSidebar({ projectId, templateId }: Props) {
   return (
     <aside
       className={clsx(
-        'ink-sidebar border-b border-[rgba(247,240,223,.14)] text-[rgb(247_240_223)] transition-[width] duration-300 lg:sticky lg:top-0 lg:h-dvh lg:border-b-0 lg:border-r',
+        'ink-sidebar border-b border-[rgba(247,240,223,.14)] text-[rgb(247_240_223)] shadow-[12px_0_42px_rgb(0_0_0/0.22)] transition-[width] duration-300 lg:sticky lg:top-0 lg:h-dvh lg:border-b-0 lg:border-r',
         collapsed ? 'lg:w-[5.5rem]' : 'lg:w-72',
       )}
     >
@@ -97,11 +97,11 @@ export default function ProjectSidebar({ projectId, templateId }: Props) {
                 to={`/projects/${projectId}/${item.to}`}
                 className={({ isActive }) =>
                   clsx(
-                    'inline-flex min-h-11 shrink-0 items-center gap-3 rounded-lg px-3 text-sm transition',
+                    'relative inline-flex min-h-11 shrink-0 items-center gap-3 overflow-hidden rounded-lg border px-3 text-sm transition',
                     collapsed && 'lg:w-12 lg:justify-center lg:px-0',
                     isActive
-                      ? 'bg-paper-50 text-ink-900 shadow-soft'
-                      : 'text-[rgba(247,240,223,.72)] hover:bg-[rgba(247,240,223,.10)] hover:text-[rgb(255,253,246)]',
+                      ? 'border-goldline/45 bg-paper-50 text-ink-900 shadow-soft'
+                      : 'border-[rgba(247,240,223,.08)] text-[rgba(247,240,223,.72)] hover:border-[rgba(247,240,223,.18)] hover:bg-[rgba(247,240,223,.10)] hover:text-[rgb(255,253,246)]',
                   )
                 }
                 title={label}

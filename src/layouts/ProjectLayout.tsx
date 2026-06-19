@@ -24,7 +24,7 @@ export default function ProjectLayout() {
       <div className="flex min-h-dvh flex-col lg:flex-row">
         <ProjectSidebar projectId={project.id} templateId={template.id} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 border-b border-goldline/20 bg-paper-50/88 px-4 py-4 shadow-[0_12px_35px_rgb(var(--shadow-soft)/0.08)] backdrop-blur md:px-8">
+          <header className="sticky top-0 z-20 border-b border-goldline/20 bg-paper-50/90 px-4 py-4 shadow-[0_12px_35px_rgb(var(--shadow-soft)/0.08)] backdrop-blur md:px-8">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-goldline/35 bg-paper-50/75 text-jade shadow-soft">

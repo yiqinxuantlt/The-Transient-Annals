@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { lazy, Suspense, type ReactElement } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { ArchiveEmptyState } from '../components/archive'
 import ProjectLayout from '../layouts/ProjectLayout'
 import RootLayout from '../layouts/RootLayout'
 
@@ -21,9 +22,7 @@ function page(element: ReactElement) {
   return (
     <Suspense
       fallback={
-        <div className="rounded-lg border border-goldline/20 bg-paper-50/80 p-6 text-sm text-ink-600 shadow-soft">
-          正在展开案卷...
-        </div>
+        <ArchiveEmptyState title="正在展开案卷" description="页面内容正在载入，请稍候。" />
       }
     >
       {element}
