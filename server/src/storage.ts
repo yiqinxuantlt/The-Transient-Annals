@@ -6,8 +6,9 @@ import {
   normalizeDatabase,
   type FushengDatabase,
 } from './schema.ts'
+import { createDatabaseBackup } from './backups.ts'
 import { createSqliteStorage } from './sqliteStorage.ts'
-import type { DatabaseStorage, DatabaseUpdater } from './storageAdapter.ts'
+import type { DatabaseStorage, DatabaseUpdater, DatabaseWriteOptions } from './storageAdapter.ts'
 
 const currentFile = import.meta.url ? fileURLToPath(import.meta.url) : ''
 const serverRoot = currentFile
@@ -142,6 +143,12 @@ const sqliteDatabaseStorage = createSqliteStorage({
 const getActiveStorage = () =>
   shouldUseSqliteStorage() ? sqliteDatabaseStorage : jsonDatabaseStorage
 
+async function backupActiveDatabase(options?: DatabaseWriteOptions) {
+  if (!options?.backupReason) return
+
+  await createDatabaseBackup(getActiveStorage().location(), options.backupReason)
+}
+
 export const databaseStorage: DatabaseStorage = {
   get kind() {
     return getActiveStorage().kind
@@ -149,11 +156,13 @@ export const databaseStorage: DatabaseStorage = {
   read() {
     return getActiveStorage().read()
   },
-  save(database) {
-    return getActiveStorage().save(database)
+  async save(database, options) {
+    await backupActiveDatabase(options)
+    return getActiveStorage().save(database, options)
   },
-  update(updater) {
-    return getActiveStorage().update(updater)
+  async update(updater, options) {
+    await backupActiveDatabase(options)
+    return getActiveStorage().update(updater, options)
   },
   location() {
     return getActiveStorage().location()
@@ -162,8 +171,10 @@ export const databaseStorage: DatabaseStorage = {
 
 export const readDatabase = () => databaseStorage.read()
 
-export const saveDatabase = (database: FushengDatabase) => databaseStorage.save(database)
+export const saveDatabase = (database: FushengDatabase, options?: DatabaseWriteOptions) =>
+  databaseStorage.save(database, options)
 
-export const updateDatabase = (updater: DatabaseUpdater) => databaseStorage.update(updater)
+export const updateDatabase = (updater: DatabaseUpdater, options?: DatabaseWriteOptions) =>
+  databaseStorage.update(updater, options)
 
 export const getDatabasePath = () => databaseStorage.location()

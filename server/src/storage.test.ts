@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -73,6 +73,29 @@ describe('storage transactions', () => {
       'project-6',
       'project-7',
     ])
+  })
+
+  it('creates a backup before high-risk database updates', async () => {
+    await loadIsolatedStorage()
+    const initialDatabase: FushengDatabase = { schemaVersion: 5, projects: [makeProject(1)] }
+
+    await saveDatabase(initialDatabase)
+    await updateDatabase(
+      (database) => ({
+        ...database,
+        projects: [],
+      }),
+      { backupReason: 'clear project data' },
+    )
+
+    const backupsDirectory = path.join(tempDirectory!, 'backups')
+    const backups = await readdir(backupsDirectory)
+
+    expect(backups).toHaveLength(1)
+    expect(backups[0]).toMatch(/^db\..+\.clear-project-data\.json$/)
+    await expect(readFile(path.join(backupsDirectory, backups[0]), 'utf8')).resolves.toContain(
+      'project-1',
+    )
   })
 
   it('switches to SQLite storage when configured', async () => {
