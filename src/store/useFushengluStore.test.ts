@@ -321,6 +321,38 @@ describe('analysis note store actions', () => {
     )
   })
 
+  it('targets the project from a desktop hash route', () => {
+    const firstProject = makeStoreProject('project-first-hash-route')
+    const routedProject = makeStoreProject('project-routed-hash-route')
+    const routedEvent = routedProject.events[0]
+
+    if (!routedEvent) throw new Error('Expected sample event')
+
+    useFushengluStore.setState({
+      projects: [firstProject, routedProject],
+      theme: 'light',
+      sidebarCollapsed: false,
+      backendStatus: 'offline',
+    })
+    window.history.pushState({}, '', '/index.html#/projects/project-routed-hash-route/events')
+
+    const noteId = useFushengluStore.getState().addAnalysisNote({
+      title: 'Hash route scoped note',
+      graphMode: 'events',
+      startId: routedEvent.id,
+      nodeIds: [routedEvent.id],
+      edgeIds: [],
+      summary: 'This note belongs to the hash-routed project.',
+    })
+
+    const projects = useFushengluStore.getState().projects
+
+    expect(projects.find((project) => project.id === firstProject.id)?.analysisNotes).toEqual([])
+    expect(projects.find((project) => project.id === routedProject.id)?.analysisNotes[0]?.id).toBe(
+      noteId,
+    )
+  })
+
   it('keeps imported analysis notes and clears them with project data', () => {
     const project = makeStoreProject('project-imported-note-actions')
     const firstEntity = project.entities[0]

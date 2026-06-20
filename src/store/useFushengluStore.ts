@@ -7,6 +7,7 @@ import {
   saveProjectToBackend,
 } from '../lib/fushengluApi'
 import { devLogger } from '../lib/devLogger'
+import { getProjectIdFromLocation } from '../routes/currentProjectRoute'
 import {
   FUSHENGLU_SCHEMA_VERSION,
   inferNormalizedTemplateId,
@@ -227,11 +228,10 @@ export const useFushengluStore = create<StoreState>()(
         const routeProjectId =
           typeof window === 'undefined'
             ? undefined
-            : window.location.pathname.match(/^\/projects\/([^/]+)/)?.[1]
-        const decodedRouteProjectId = routeProjectId ? decodeURIComponent(routeProjectId) : undefined
+            : getProjectIdFromLocation(window.location)
 
-        return projects.some((project) => project.id === decodedRouteProjectId)
-          ? decodedRouteProjectId
+        return projects.some((project) => project.id === routeProjectId)
+          ? routeProjectId
           : projects[0]?.id
       }
 
