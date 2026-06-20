@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { lazy, Suspense, type ReactElement } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, createHashRouter, Navigate } from 'react-router-dom'
 import { ArchiveEmptyState } from '../components/archive'
 import ProjectLayout from '../layouts/ProjectLayout'
 import RootLayout from '../layouts/RootLayout'
@@ -30,7 +30,7 @@ function page(element: ReactElement) {
   )
 }
 
-export const router = createBrowserRouter([
+const routes = [
   {
     path: '/',
     element: <RootLayout />,
@@ -58,4 +58,8 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
-])
+]
+
+const createRouter = import.meta.env.VITE_DESKTOP === 'true' ? createHashRouter : createBrowserRouter
+
+export const router = createRouter(routes)
