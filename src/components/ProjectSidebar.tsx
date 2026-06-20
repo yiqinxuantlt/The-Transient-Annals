@@ -14,6 +14,7 @@ type Props = {
 const MIN_WIDTH = 200
 const MAX_WIDTH = 400
 const COLLAPSED_WIDTH = 88 // 5.5rem ≈ 88px
+const logoUrl = `${import.meta.env.BASE_URL}fushenglu-logo.png`
 
 export default function ProjectSidebar({ projectId, templateId }: Props) {
   const collapsed = useFushengluStore((state) => state.sidebarCollapsed)
@@ -95,7 +96,7 @@ export default function ProjectSidebar({ projectId, templateId }: Props) {
           >
             <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-goldline/30 bg-paper-50/80 shadow-soft">
               <img
-                src="/fushenglu-logo.png"
+                src={logoUrl}
                 alt="浮生录"
                 className="h-full w-full object-cover"
                 width="48"

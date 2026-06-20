@@ -2,13 +2,15 @@ import { FolderKanban } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import ThemeToggle from './ThemeToggle'
 
+const logoUrl = `${import.meta.env.BASE_URL}fushenglu-logo.png`
+
 export default function AppHeader() {
   return (
     <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
       <Link to="/" className="flex items-center gap-3" aria-label="返回浮生录首页">
         <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-goldline/45 bg-paper-50 shadow-soft">
           <img
-            src="/fushenglu-logo.png"
+            src={logoUrl}
             alt="浮生录"
             className="h-full w-full object-cover"
             width="48"

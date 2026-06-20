@@ -1,8 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const isDesktopBuild = process.env.VITE_DESKTOP === 'true'
+
 // https://vite.dev/config/
 export default defineConfig({
+  base: isDesktopBuild ? './' : '/',
   plugins: [react()],
   build: {
     rollupOptions: {
