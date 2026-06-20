@@ -5,6 +5,10 @@ import {
   normalizeProjectForStorage,
 } from '../shared/projectNormalization'
 import type { FushengProject } from '../types'
+import {
+  deleteProjectFromBackend,
+  saveProjectToBackend,
+} from '../lib/fushengluApi'
 import { useFushengluStore } from './useFushengluStore'
 
 vi.mock('../lib/fushengluApi', () => ({
@@ -388,5 +392,42 @@ describe('analysis note store actions', () => {
     useFushengluStore.getState().clearProjectData(project.id)
 
     expect(useFushengluStore.getState().projects[0]?.analysisNotes).toEqual([])
+  })
+
+  it('passes backup reasons for high-risk project writes', () => {
+    const project = makeStoreProject('project-risky-write-reasons')
+    setStoreProject(project)
+
+    useFushengluStore.getState().replaceProjectData(project.id, {
+      ...project,
+      title: 'Imported project',
+    })
+    useFushengluStore.getState().restoreSampleData(project.id)
+    useFushengluStore.getState().clearProjectData(project.id)
+    useFushengluStore.getState().deleteProject(project.id)
+
+    expect(saveProjectToBackend).toHaveBeenCalledWith(
+      expect.objectContaining({ id: project.id, title: 'Imported project' }),
+      { backupReason: 'replace-project-data' },
+    )
+    expect(saveProjectToBackend).toHaveBeenCalledWith(
+      expect.objectContaining({ id: project.id }),
+      { backupReason: 'restore-sample-data' },
+    )
+    expect(saveProjectToBackend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: project.id,
+        entities: [],
+        events: [],
+        entityRelations: [],
+        eventLinks: [],
+        libraryItems: [],
+        analysisNotes: [],
+      }),
+      { backupReason: 'clear-project-data' },
+    )
+    expect(deleteProjectFromBackend).toHaveBeenCalledWith(project.id, {
+      backupReason: 'delete-project',
+    })
   })
 })

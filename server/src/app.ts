@@ -40,26 +40,33 @@ const positionSchema = z.object({
 const routeParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || '' : value || ''
 
+const backupReasonHeader = (request: Request) =>
+  routeParam(request.header('x-fushenglu-backup-reason')).trim() || undefined
+
 async function updateProject(
   projectId: string,
   updater: (project: ReturnType<typeof normalizeProject>) => ReturnType<typeof normalizeProject>,
+  backupReason?: string,
 ) {
   let nextProject: ReturnType<typeof normalizeProject> | null = null
 
-  await updateDatabase((database) => {
-    const index = database.projects.findIndex((project) => project.id === projectId)
+  await updateDatabase(
+    (database) => {
+      const index = database.projects.findIndex((project) => project.id === projectId)
 
-    if (index < 0) return database
+      if (index < 0) return database
 
-    nextProject = normalizeProject({
-      ...updater(database.projects[index]),
-      updatedAt: new Date().toISOString(),
-    })
+      nextProject = normalizeProject({
+        ...updater(database.projects[index]),
+        updatedAt: new Date().toISOString(),
+      })
 
-    const projects = [...database.projects]
-    projects[index] = nextProject
-    return { ...database, projects }
-  })
+      const projects = [...database.projects]
+      projects[index] = nextProject
+      return { ...database, projects }
+    },
+    { backupReason },
+  )
 
   return nextProject
 }
@@ -140,19 +147,22 @@ export function createFushengluApp() {
         id: projectId,
       })
 
-      await updateDatabase((database) => {
-        const projects = [...database.projects]
-        const index = projects.findIndex((item) => item.id === project.id)
-        project = normalizeProject({ ...project, updatedAt: new Date().toISOString() })
+      await updateDatabase(
+        (database) => {
+          const projects = [...database.projects]
+          const index = projects.findIndex((item) => item.id === project.id)
+          project = normalizeProject({ ...project, updatedAt: new Date().toISOString() })
 
-        if (index >= 0) {
-          projects[index] = project
-        } else {
-          projects.unshift(project)
-        }
+          if (index >= 0) {
+            projects[index] = project
+          } else {
+            projects.unshift(project)
+          }
 
-        return { ...database, projects }
-      })
+          return { ...database, projects }
+        },
+        { backupReason: backupReasonHeader(request) },
+      )
 
       response.json({ project })
     }),
@@ -164,11 +174,14 @@ export function createFushengluApp() {
       const projectId = routeParam(request.params.projectId)
       let deleted = false
 
-      await updateDatabase((database) => {
-        const nextProjects = database.projects.filter((project) => project.id !== projectId)
-        deleted = nextProjects.length !== database.projects.length
-        return deleted ? { ...database, projects: nextProjects } : database
-      })
+      await updateDatabase(
+        (database) => {
+          const nextProjects = database.projects.filter((project) => project.id !== projectId)
+          deleted = nextProjects.length !== database.projects.length
+          return deleted ? { ...database, projects: nextProjects } : database
+        },
+        { backupReason: backupReasonHeader(request) || 'delete-project' },
+      )
 
       if (!deleted) {
         response.status(404).json({ error: 'Project not found' })
@@ -183,16 +196,19 @@ export function createFushengluApp() {
     '/api/projects/:projectId/restore-sample',
     asyncRoute(async (request, response) => {
       const projectId = routeParam(request.params.projectId)
-      const nextProject = await updateProject(projectId, (project) =>
-        normalizeProject(
-          createSampleProject(
-            project.id,
-            project.title,
-            project.category,
-            project.subtitle,
-            project.templateId,
+      const nextProject = await updateProject(
+        projectId,
+        (project) =>
+          normalizeProject(
+            createSampleProject(
+              project.id,
+              project.title,
+              project.category,
+              project.subtitle,
+              project.templateId,
+            ),
           ),
-        ),
+        backupReasonHeader(request) || 'restore-sample-data',
       )
 
       if (!nextProject) {

@@ -4,10 +4,20 @@ import { devLogger } from './devLogger'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:4177/api'
 const REQUEST_TIMEOUT = 2200
 
+type BackendWriteOptions = {
+  backupReason?: string
+}
+
 const getBodySize = (body?: BodyInit | null) => {
   if (!body) return 0
   if (typeof body === 'string') return body.length
   return undefined
+}
+
+function backupHeaders(options?: BackendWriteOptions): Record<string, string> {
+  return options?.backupReason
+    ? { 'X-Fushenglu-Backup-Reason': options.backupReason }
+    : {}
 }
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -72,11 +82,15 @@ export async function fetchProjectsFromBackend() {
   return payload.projects
 }
 
-export async function saveProjectToBackend(project: FushengProject) {
+export async function saveProjectToBackend(
+  project: FushengProject,
+  options?: BackendWriteOptions,
+) {
   const payload = await requestJson<{ project: FushengProject }>(
     `/projects/${encodeURIComponent(project.id)}`,
     {
       method: 'PUT',
+      headers: backupHeaders(options),
       body: JSON.stringify(project),
     },
   )
@@ -84,8 +98,12 @@ export async function saveProjectToBackend(project: FushengProject) {
   return payload.project
 }
 
-export async function deleteProjectFromBackend(projectId: string) {
+export async function deleteProjectFromBackend(
+  projectId: string,
+  options?: BackendWriteOptions,
+) {
   await requestJson<{ ok: true }>(`/projects/${encodeURIComponent(projectId)}`, {
     method: 'DELETE',
+    headers: backupHeaders(options),
   })
 }

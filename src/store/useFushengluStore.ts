@@ -37,6 +37,10 @@ type ProjectDraft = {
   templateId: ProjectTemplateId
 }
 
+type CommitProjectOptions = {
+  backupReason?: string
+}
+
 type StoreState = {
   projects: FushengProject[]
   theme: ThemeMode
@@ -185,9 +189,14 @@ export const useFushengluStore = create<StoreState>()(
         devLogger.event('useFushengluStore', message, details)
       }
 
-      const syncProject = async (project: FushengProject) => {
+      const syncProject = async (
+        project: FushengProject,
+        options?: CommitProjectOptions,
+      ) => {
         try {
-          await saveProjectToBackend(normalizeProjectForStorage(project))
+          await saveProjectToBackend(normalizeProjectForStorage(project), {
+            backupReason: options?.backupReason,
+          })
           logState('Backend sync succeeded', { projectId: project.id })
           set({ backendStatus: 'online' })
         } catch (error) {
@@ -202,6 +211,7 @@ export const useFushengluStore = create<StoreState>()(
       const commitProject = (
         projectId: string,
         updater: (project: FushengProject) => FushengProject | undefined,
+        options?: CommitProjectOptions,
       ) => {
         let changedProject: FushengProject | undefined
 
@@ -220,7 +230,7 @@ export const useFushengluStore = create<StoreState>()(
           }),
         }))
 
-        if (changedProject) void syncProject(changedProject)
+        if (changedProject) void syncProject(changedProject, options)
       }
 
       const getCurrentProjectId = () => {
@@ -320,7 +330,7 @@ export const useFushengluStore = create<StoreState>()(
             projects: state.projects.filter((project) => project.id !== projectId),
           }))
           logEvent('Project deleted', { projectId })
-          void deleteProjectFromBackend(projectId)
+          void deleteProjectFromBackend(projectId, { backupReason: 'delete-project' })
             .then(() => {
               logState('Backend delete succeeded', { projectId })
               set({ backendStatus: 'online' })
@@ -600,7 +610,11 @@ export const useFushengluStore = create<StoreState>()(
         },
 
         replaceProjectData: (projectId, importedProject) => {
-          commitProject(projectId, (project) => cleanImportedProject(project, importedProject))
+          commitProject(
+            projectId,
+            (project) => cleanImportedProject(project, importedProject),
+            { backupReason: 'replace-project-data' },
+          )
           logEvent('Project data replaced', {
             projectId,
             entityCount: importedProject.entities?.length || 0,
@@ -610,31 +624,39 @@ export const useFushengluStore = create<StoreState>()(
         },
 
         restoreSampleData: (projectId) => {
-          commitProject(projectId, (project) => ({
-            ...createSampleProject(
-              project.id,
-              project.title,
-              project.category,
-              project.subtitle,
-              project.templateId,
-            ),
-            updatedAt: now(),
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...createSampleProject(
+                project.id,
+                project.title,
+                project.category,
+                project.subtitle,
+                project.templateId,
+              ),
+              updatedAt: now(),
+            }),
+            { backupReason: 'restore-sample-data' },
+          )
           logEvent('Sample data restored', { projectId })
         },
 
         clearProjectData: (projectId) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            entities: [],
-            events: [],
-            entityRelations: [],
-            eventLinks: [],
-            libraryItems: [],
-            analysisNotes: [],
-            entityNodePositions: {},
-            eventNodePositions: {},
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              entities: [],
+              events: [],
+              entityRelations: [],
+              eventLinks: [],
+              libraryItems: [],
+              analysisNotes: [],
+              entityNodePositions: {},
+              eventNodePositions: {},
+            }),
+            { backupReason: 'clear-project-data' },
+          )
           logEvent('Project data cleared', { projectId })
         },
       }
