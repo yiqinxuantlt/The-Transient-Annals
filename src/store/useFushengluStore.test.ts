@@ -25,7 +25,11 @@ const setStoreProject = (project: FushengProject) => {
     projects: [project],
     theme: 'light',
     sidebarCollapsed: false,
+    sidebarWidth: 288,
     backendStatus: 'offline',
+    undoStacksByProjectId: {},
+    redoStacksByProjectId: {},
+    saveStatusByProjectId: {},
   })
 }
 
@@ -37,7 +41,11 @@ beforeEach(() => {
     projects: [],
     theme: 'light',
     sidebarCollapsed: false,
+    sidebarWidth: 288,
     backendStatus: 'offline',
+    undoStacksByProjectId: {},
+    redoStacksByProjectId: {},
+    saveStatusByProjectId: {},
   })
 })
 
@@ -188,6 +196,135 @@ describe('normalizeProjectForStorage', () => {
 
     const legacyProject = { ...project, analysisNotes: undefined } as unknown as typeof project
     expect(normalizeProjectForStorage(legacyProject).analysisNotes).toEqual([])
+  })
+})
+
+describe('project history and save status', () => {
+  it('undoes and redoes project edits through the store', async () => {
+    const project = makeStoreProject('project-history-store')
+    setStoreProject(project)
+
+    useFushengluStore.getState().updateProjectMeta(project.id, {
+      title: 'Updated title',
+      subtitle: project.subtitle,
+      category: project.category,
+      templateId: project.templateId,
+    })
+
+    expect(useFushengluStore.getState().projects[0]?.title).toBe('Updated title')
+    expect(useFushengluStore.getState().canUndoProject(project.id)).toBe(true)
+
+    useFushengluStore.getState().undoProject(project.id)
+    expect(useFushengluStore.getState().projects[0]?.title).toBe(project.title)
+    expect(useFushengluStore.getState().canRedoProject(project.id)).toBe(true)
+
+    useFushengluStore.getState().redoProject(project.id)
+    expect(useFushengluStore.getState().projects[0]?.title).toBe('Updated title')
+
+    await vi.waitFor(() =>
+      expect(useFushengluStore.getState().saveStatusByProjectId[project.id]?.state).toBe('saved'),
+    )
+  })
+
+  it('clears redo history when a new edit happens after undo', () => {
+    const project = makeStoreProject('project-redo-clear')
+    setStoreProject(project)
+
+    useFushengluStore.getState().updateProjectMeta(project.id, {
+      title: 'First edit',
+      subtitle: project.subtitle,
+      category: project.category,
+      templateId: project.templateId,
+    })
+    useFushengluStore.getState().undoProject(project.id)
+    useFushengluStore.getState().updateProjectMeta(project.id, {
+      title: 'Second edit',
+      subtitle: project.subtitle,
+      category: project.category,
+      templateId: project.templateId,
+    })
+
+    expect(useFushengluStore.getState().canRedoProject(project.id)).toBe(false)
+  })
+
+  it('keeps history isolated per project', () => {
+    const first = makeStoreProject('project-history-first')
+    const second = makeStoreProject('project-history-second')
+    useFushengluStore.setState({
+      projects: [first, second],
+      theme: 'light',
+      sidebarCollapsed: false,
+      sidebarWidth: 288,
+      backendStatus: 'offline',
+      undoStacksByProjectId: {},
+      redoStacksByProjectId: {},
+      saveStatusByProjectId: {},
+    })
+
+    useFushengluStore.getState().updateProjectMeta(second.id, {
+      title: 'Second changed',
+      subtitle: second.subtitle,
+      category: second.category,
+      templateId: second.templateId,
+    })
+
+    expect(useFushengluStore.getState().canUndoProject(first.id)).toBe(false)
+    expect(useFushengluStore.getState().canUndoProject(second.id)).toBe(true)
+  })
+
+  it('merges repeated node position updates into one undo entry', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-20T00:00:00.000Z'))
+    const project = makeStoreProject('project-position-merge')
+    const entity = project.entities[0]
+    if (!entity) throw new Error('Expected sample entity')
+    const entityNodePositions = { ...project.entityNodePositions }
+    delete entityNodePositions[entity.id]
+    setStoreProject({ ...project, entityNodePositions })
+
+    useFushengluStore.getState().updateEntityNodePosition(project.id, entity.id, { x: 10, y: 20 })
+    vi.setSystemTime(new Date('2026-06-20T00:00:00.600Z'))
+    useFushengluStore.getState().updateEntityNodePosition(project.id, entity.id, { x: 30, y: 40 })
+
+    expect(useFushengluStore.getState().undoStacksByProjectId[project.id]).toHaveLength(1)
+
+    useFushengluStore.getState().undoProject(project.id)
+    expect(useFushengluStore.getState().projects[0]?.entityNodePositions[entity.id]).toBeUndefined()
+  })
+
+  it('classifies rejected saves as error while keeping history usable', async () => {
+    vi.mocked(saveProjectToBackend).mockRejectedValueOnce(new Error('HTTP 500 while saving project'))
+    const project = makeStoreProject('project-save-error')
+    setStoreProject(project)
+
+    useFushengluStore.getState().updateProjectMeta(project.id, {
+      title: 'Will fail',
+      subtitle: project.subtitle,
+      category: project.category,
+      templateId: project.templateId,
+    })
+
+    await vi.waitFor(() =>
+      expect(useFushengluStore.getState().saveStatusByProjectId[project.id]?.state).toBe('error'),
+    )
+    expect(useFushengluStore.getState().canUndoProject(project.id)).toBe(true)
+  })
+
+  it('classifies network saves as offline', async () => {
+    vi.mocked(saveProjectToBackend).mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    const project = makeStoreProject('project-save-offline')
+    setStoreProject(project)
+
+    useFushengluStore.getState().updateProjectMeta(project.id, {
+      title: 'Offline edit',
+      subtitle: project.subtitle,
+      category: project.category,
+      templateId: project.templateId,
+    })
+
+    await vi.waitFor(() =>
+      expect(useFushengluStore.getState().saveStatusByProjectId[project.id]?.state).toBe('offline'),
+    )
   })
 })
 

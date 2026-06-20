@@ -8,6 +8,7 @@ import {
   moveRedoToUndo,
   moveUndoToRedo,
   pushHistoryEntry,
+  type ProjectHistoryPushResult,
 } from './projectHistory'
 
 const makeProject = (id: string, title = id) =>
@@ -67,7 +68,7 @@ describe('project history helpers', () => {
       }),
     )
 
-    const result = entries.reduce(
+    const result = entries.reduce<ProjectHistoryPushResult>(
       (state, entry) =>
         pushHistoryEntry(state.undoStacksByProjectId, state.redoStacksByProjectId, entry),
       { undoStacksByProjectId: {}, redoStacksByProjectId: {} },

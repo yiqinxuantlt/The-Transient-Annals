@@ -14,6 +14,19 @@ import {
   isLegacyBrokenProject,
   normalizeProjectForStorage,
 } from '../shared/projectNormalization'
+import {
+  DEFAULT_MERGE_WINDOW_MS,
+  cloneProjectSnapshot,
+  failedSaveStatus,
+  makeHistoryEntry,
+  moveRedoToUndo,
+  moveUndoToRedo,
+  pushHistoryEntry,
+  savedStatus,
+  savingStatus,
+  type ProjectHistoryStacks,
+  type ProjectSaveStatus,
+} from './projectHistory'
 import type {
   AnalysisNoteDraft,
   BackendStatus,
@@ -39,6 +52,10 @@ type ProjectDraft = {
 
 type CommitProjectOptions = {
   backupReason?: string
+  historyLabel?: string
+  skipHistory?: boolean
+  mergeKey?: string
+  mergeWindowMs?: number
 }
 
 type StoreState = {
@@ -47,12 +64,19 @@ type StoreState = {
   sidebarCollapsed: boolean
   sidebarWidth: number
   backendStatus: BackendStatus
+  undoStacksByProjectId: ProjectHistoryStacks
+  redoStacksByProjectId: ProjectHistoryStacks
+  saveStatusByProjectId: Record<string, ProjectSaveStatus>
   hydrateFromBackend: () => Promise<void>
   setTheme: (theme: ThemeMode) => void
   toggleTheme: () => void
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
   setSidebarWidth: (width: number) => void
+  undoProject: (projectId: string) => void
+  redoProject: (projectId: string) => void
+  canUndoProject: (projectId: string) => boolean
+  canRedoProject: (projectId: string) => boolean
   addProject: (draft: ProjectDraft) => string
   updateProjectMeta: (projectId: string, draft: ProjectDraft) => void
   deleteProject: (projectId: string) => void
@@ -193,18 +217,38 @@ export const useFushengluStore = create<StoreState>()(
         project: FushengProject,
         options?: CommitProjectOptions,
       ) => {
+        set((state) => ({
+          saveStatusByProjectId: {
+            ...state.saveStatusByProjectId,
+            [project.id]: savingStatus(),
+          },
+        }))
+
         try {
           await saveProjectToBackend(normalizeProjectForStorage(project), {
             backupReason: options?.backupReason,
           })
           logState('Backend sync succeeded', { projectId: project.id })
-          set({ backendStatus: 'online' })
+          set((state) => ({
+            backendStatus: 'online',
+            saveStatusByProjectId: {
+              ...state.saveStatusByProjectId,
+              [project.id]: savedStatus(),
+            },
+          }))
         } catch (error) {
+          const saveStatus = failedSaveStatus(error)
           logState('Backend sync failed', {
             projectId: project.id,
-            message: error instanceof Error ? error.message : String(error),
+            message: saveStatus.errorMessage,
           })
-          set({ backendStatus: 'offline' })
+          set((state) => ({
+            backendStatus: saveStatus.state === 'offline' ? 'offline' : state.backendStatus,
+            saveStatusByProjectId: {
+              ...state.saveStatusByProjectId,
+              [project.id]: saveStatus,
+            },
+          }))
         }
       }
 
@@ -215,20 +259,54 @@ export const useFushengluStore = create<StoreState>()(
       ) => {
         let changedProject: FushengProject | undefined
 
-        set((state) => ({
-          projects: state.projects.map((project) => {
+        set((state) => {
+          let historyUpdate:
+            | {
+                undoStacksByProjectId: ProjectHistoryStacks
+                redoStacksByProjectId: ProjectHistoryStacks
+              }
+            | undefined
+
+          const projects = state.projects.map((project) => {
             if (project.id !== projectId) return normalizeProjectForStorage(project)
 
             const normalizedProject = normalizeProjectForStorage(project)
+            const before = cloneProjectSnapshot(normalizedProject)
             const updatedProject = updater(normalizedProject)
             if (!updatedProject) return normalizedProject
 
             changedProject = touchProject(
               normalizeProjectForStorage(updatedProject),
             )
+
+            if (!options?.skipHistory) {
+              const entry = makeHistoryEntry(before, changedProject, {
+                label: options?.historyLabel || 'Update project',
+                mergeKey: options?.mergeKey,
+                timestamp: Date.now(),
+              })
+              historyUpdate = pushHistoryEntry(
+                state.undoStacksByProjectId,
+                state.redoStacksByProjectId,
+                entry,
+                options?.mergeWindowMs ?? DEFAULT_MERGE_WINDOW_MS,
+              )
+            }
+
             return changedProject
-          }),
-        }))
+          })
+
+          if (!changedProject) return { projects }
+
+          return {
+            projects,
+            ...(historyUpdate ?? {}),
+            saveStatusByProjectId: {
+              ...state.saveStatusByProjectId,
+              [projectId]: savingStatus(),
+            },
+          }
+        })
 
         if (changedProject) void syncProject(changedProject, options)
       }
@@ -251,6 +329,9 @@ export const useFushengluStore = create<StoreState>()(
         sidebarCollapsed: false,
         sidebarWidth: 288,
         backendStatus: 'checking',
+        undoStacksByProjectId: {},
+        redoStacksByProjectId: {},
+        saveStatusByProjectId: {},
 
         hydrateFromBackend: async () => {
           logState('Backend hydration started')
@@ -290,6 +371,68 @@ export const useFushengluStore = create<StoreState>()(
 
         setSidebarWidth: (width) => set({ sidebarWidth: width }),
 
+        undoProject: (projectId) => {
+          let restoredProject: FushengProject | undefined
+
+          set((state) => {
+            const result = moveUndoToRedo(
+              state.undoStacksByProjectId,
+              state.redoStacksByProjectId,
+              projectId,
+            )
+            if (!result.entry) return state
+
+            restoredProject = touchProject(normalizeProjectForStorage(result.entry.before))
+
+            return {
+              projects: state.projects.map((project) =>
+                project.id === projectId ? restoredProject! : project,
+              ),
+              undoStacksByProjectId: result.undoStacksByProjectId,
+              redoStacksByProjectId: result.redoStacksByProjectId,
+              saveStatusByProjectId: {
+                ...state.saveStatusByProjectId,
+                [projectId]: savingStatus(),
+              },
+            }
+          })
+
+          if (restoredProject) void syncProject(restoredProject, { skipHistory: true })
+        },
+
+        redoProject: (projectId) => {
+          let restoredProject: FushengProject | undefined
+
+          set((state) => {
+            const result = moveRedoToUndo(
+              state.undoStacksByProjectId,
+              state.redoStacksByProjectId,
+              projectId,
+            )
+            if (!result.entry) return state
+
+            restoredProject = touchProject(normalizeProjectForStorage(result.entry.after))
+
+            return {
+              projects: state.projects.map((project) =>
+                project.id === projectId ? restoredProject! : project,
+              ),
+              undoStacksByProjectId: result.undoStacksByProjectId,
+              redoStacksByProjectId: result.redoStacksByProjectId,
+              saveStatusByProjectId: {
+                ...state.saveStatusByProjectId,
+                [projectId]: savingStatus(),
+              },
+            }
+          })
+
+          if (restoredProject) void syncProject(restoredProject, { skipHistory: true })
+        },
+
+        canUndoProject: (projectId) => Boolean(get().undoStacksByProjectId[projectId]?.length),
+
+        canRedoProject: (projectId) => Boolean(get().redoStacksByProjectId[projectId]?.length),
+
         addProject: (draft) => {
           const id = makeId('project')
           const project: FushengProject = normalizeProjectForStorage({
@@ -314,10 +457,14 @@ export const useFushengluStore = create<StoreState>()(
         },
 
         updateProjectMeta: (projectId, draft) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            ...draft,
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              ...draft,
+            }),
+            { historyLabel: 'Update project metadata' },
+          )
           logEvent('Project metadata updated', {
             projectId,
             templateId: draft.templateId,
@@ -346,78 +493,106 @@ export const useFushengluStore = create<StoreState>()(
 
         addEntity: (projectId, draft) => {
           const id = makeId('entity')
-          commitProject(projectId, (project) => ({
-            ...project,
-            entities: [...project.entities, { id, ...draft }],
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              entities: [...project.entities, { id, ...draft }],
+            }),
+            { historyLabel: 'Add entity' },
+          )
           logEvent('Entity created', { projectId, entityId: id, type: draft.type })
           return id
         },
 
         updateEntity: (projectId, entityId, draft) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            entities: project.entities.map((entity) =>
-              entity.id === entityId ? { id: entityId, ...draft } : entity,
-            ),
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              entities: project.entities.map((entity) =>
+                entity.id === entityId ? { id: entityId, ...draft } : entity,
+              ),
+            }),
+            { historyLabel: 'Update entity' },
+          )
           logEvent('Entity updated', { projectId, entityId, type: draft.type })
         },
 
         deleteEntity: (projectId, entityId) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            entities: project.entities.filter((entity) => entity.id !== entityId),
-            entityRelations: project.entityRelations.filter(
-              (relation) => relation.sourceId !== entityId && relation.targetId !== entityId,
-            ),
-            events: project.events.map((event) => ({
-              ...event,
-              relatedEntityIds: event.relatedEntityIds.filter((id) => id !== entityId),
-            })),
-            entityNodePositions: withoutKey(project.entityNodePositions, entityId),
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              entities: project.entities.filter((entity) => entity.id !== entityId),
+              entityRelations: project.entityRelations.filter(
+                (relation) => relation.sourceId !== entityId && relation.targetId !== entityId,
+              ),
+              events: project.events.map((event) => ({
+                ...event,
+                relatedEntityIds: event.relatedEntityIds.filter((id) => id !== entityId),
+              })),
+              entityNodePositions: withoutKey(project.entityNodePositions, entityId),
+            }),
+            { historyLabel: 'Delete entity' },
+          )
           logEvent('Entity deleted', { projectId, entityId })
         },
 
         addEvent: (projectId, draft) => {
           const id = makeId('event')
-          commitProject(projectId, (project) => ({
-            ...project,
-            events: [...project.events, { id, ...draft }],
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              events: [...project.events, { id, ...draft }],
+            }),
+            { historyLabel: 'Add event' },
+          )
           logEvent('Event created', { projectId, eventId: id, eventType: draft.eventType })
           return id
         },
 
         updateEvent: (projectId, eventId, draft) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            events: project.events.map((event) =>
-              event.id === eventId ? { id: eventId, ...draft } : event,
-            ),
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              events: project.events.map((event) =>
+                event.id === eventId ? { id: eventId, ...draft } : event,
+              ),
+            }),
+            { historyLabel: 'Update event' },
+          )
           logEvent('Event updated', { projectId, eventId, eventType: draft.eventType })
         },
 
         deleteEvent: (projectId, eventId) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            events: project.events.filter((event) => event.id !== eventId),
-            eventLinks: project.eventLinks.filter(
-              (link) => link.sourceEventId !== eventId && link.targetEventId !== eventId,
-            ),
-            eventNodePositions: withoutKey(project.eventNodePositions, eventId),
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              events: project.events.filter((event) => event.id !== eventId),
+              eventLinks: project.eventLinks.filter(
+                (link) => link.sourceEventId !== eventId && link.targetEventId !== eventId,
+              ),
+              eventNodePositions: withoutKey(project.eventNodePositions, eventId),
+            }),
+            { historyLabel: 'Delete event' },
+          )
           logEvent('Event deleted', { projectId, eventId })
         },
 
         addEntityRelation: (projectId, draft) => {
           const id = makeId('relation')
-          commitProject(projectId, (project) => ({
-            ...project,
-            entityRelations: [...project.entityRelations, { id, ...draft }],
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              entityRelations: [...project.entityRelations, { id, ...draft }],
+            }),
+            { historyLabel: 'Add entity relation' },
+          )
           logEvent('Entity relation created', {
             projectId,
             relationId: id,
@@ -427,29 +602,44 @@ export const useFushengluStore = create<StoreState>()(
         },
 
         updateEntityRelationStyle: (projectId, relationId, style) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            entityRelations: project.entityRelations.map((relation) =>
-              relation.id === relationId ? { ...relation, style } : relation,
-            ),
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              entityRelations: project.entityRelations.map((relation) =>
+                relation.id === relationId ? { ...relation, style } : relation,
+              ),
+            }),
+            {
+              historyLabel: 'Update entity relation style',
+              mergeKey: `entity-relation-style:${relationId}`,
+            },
+          )
           logEvent('Entity relation style updated', { projectId, relationId })
         },
 
         deleteEntityRelation: (projectId, relationId) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            entityRelations: project.entityRelations.filter((relation) => relation.id !== relationId),
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              entityRelations: project.entityRelations.filter((relation) => relation.id !== relationId),
+            }),
+            { historyLabel: 'Delete entity relation' },
+          )
           logEvent('Entity relation deleted', { projectId, relationId })
         },
 
         addEventLink: (projectId, draft) => {
           const id = makeId('eventlink')
-          commitProject(projectId, (project) => ({
-            ...project,
-            eventLinks: [...project.eventLinks, { id, ...draft }],
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              eventLinks: [...project.eventLinks, { id, ...draft }],
+            }),
+            { historyLabel: 'Add event link' },
+          )
           logEvent('Event link created', {
             projectId,
             linkId: id,
@@ -459,78 +649,127 @@ export const useFushengluStore = create<StoreState>()(
         },
 
         updateEventLinkStyle: (projectId, linkId, style) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            eventLinks: project.eventLinks.map((link) =>
-              link.id === linkId ? { ...link, style } : link,
-            ),
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              eventLinks: project.eventLinks.map((link) =>
+                link.id === linkId ? { ...link, style } : link,
+              ),
+            }),
+            {
+              historyLabel: 'Update event link style',
+              mergeKey: `event-link-style:${linkId}`,
+            },
+          )
           logEvent('Event link style updated', { projectId, linkId })
         },
 
         deleteEventLink: (projectId, linkId) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            eventLinks: project.eventLinks.filter((link) => link.id !== linkId),
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              eventLinks: project.eventLinks.filter((link) => link.id !== linkId),
+            }),
+            { historyLabel: 'Delete event link' },
+          )
           logEvent('Event link deleted', { projectId, linkId })
         },
 
         updateEntityNodePosition: (projectId, entityId, position) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            entityNodePositions: {
-              ...project.entityNodePositions,
-              [entityId]: position,
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              entityNodePositions: {
+                ...project.entityNodePositions,
+                [entityId]: position,
+              },
+            }),
+            {
+              historyLabel: 'Move entity node',
+              mergeKey: `entity-position:${entityId}`,
             },
-          }))
+          )
         },
 
         updateEventNodePosition: (projectId, eventId, position) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            eventNodePositions: {
-              ...project.eventNodePositions,
-              [eventId]: position,
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              eventNodePositions: {
+                ...project.eventNodePositions,
+                [eventId]: position,
+              },
+            }),
+            {
+              historyLabel: 'Move event node',
+              mergeKey: `event-position:${eventId}`,
             },
-          }))
+          )
         },
 
         batchUpdateEntityNodePositions: (projectId, positions) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            entityNodePositions: {
-              ...project.entityNodePositions,
-              ...positions,
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              entityNodePositions: {
+                ...project.entityNodePositions,
+                ...positions,
+              },
+            }),
+            {
+              historyLabel: 'Apply entity graph layout',
+              mergeKey: `entity-layout:${projectId}:${Date.now()}`,
+              mergeWindowMs: 0,
             },
-          }))
+          )
         },
 
         batchUpdateEventNodePositions: (projectId, positions) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            eventNodePositions: {
-              ...project.eventNodePositions,
-              ...positions,
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              eventNodePositions: {
+                ...project.eventNodePositions,
+                ...positions,
+              },
+            }),
+            {
+              historyLabel: 'Apply event graph layout',
+              mergeKey: `event-layout:${projectId}:${Date.now()}`,
+              mergeWindowMs: 0,
             },
-          }))
+          )
         },
 
         addLibraryItem: (projectId, draft) => {
           const id = makeId('library')
-          commitProject(projectId, (project) => ({
-            ...project,
-            libraryItems: [{ id, createdAt: now(), ...draft }, ...project.libraryItems],
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              libraryItems: [{ id, createdAt: now(), ...draft }, ...project.libraryItems],
+            }),
+            { historyLabel: 'Add library item' },
+          )
           logEvent('Library item created', { projectId, itemId: id, kind: draft.kind })
           return id
         },
 
         deleteLibraryItem: (projectId, itemId) => {
-          commitProject(projectId, (project) => ({
-            ...project,
-            libraryItems: project.libraryItems.filter((item) => item.id !== itemId),
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              libraryItems: project.libraryItems.filter((item) => item.id !== itemId),
+            }),
+            { historyLabel: 'Delete library item' },
+          )
           logEvent('Library item deleted', { projectId, itemId })
         },
 
@@ -540,18 +779,22 @@ export const useFushengluStore = create<StoreState>()(
           const projectId = getCurrentProjectId()
           if (!projectId) return id
 
-          commitProject(projectId, (project) => ({
-            ...project,
-            analysisNotes: [
-              ...project.analysisNotes,
-              {
-                ...cloneAnalysisNoteDraft(draft),
-                id,
-                createdAt: timestamp,
-                updatedAt: timestamp,
-              },
-            ],
-          }))
+          commitProject(
+            projectId,
+            (project) => ({
+              ...project,
+              analysisNotes: [
+                ...project.analysisNotes,
+                {
+                  ...cloneAnalysisNoteDraft(draft),
+                  id,
+                  createdAt: timestamp,
+                  updatedAt: timestamp,
+                },
+              ],
+            }),
+            { historyLabel: 'Add analysis note' },
+          )
           logEvent('Analysis note created', {
             projectId,
             noteId: id,
@@ -568,24 +811,31 @@ export const useFushengluStore = create<StoreState>()(
           const timestamp = now()
           let updated = false
 
-          commitProject(projectId, (project) => {
-            if (!project.analysisNotes.some((note) => note.id === noteId)) return undefined
+          commitProject(
+            projectId,
+            (project) => {
+              if (!project.analysisNotes.some((note) => note.id === noteId)) return undefined
 
-            updated = true
-            return {
-              ...project,
-              analysisNotes: project.analysisNotes.map((note) =>
-                note.id === noteId
-                  ? {
-                      ...note,
-                      ...updates,
-                      createdAt: note.createdAt,
-                      updatedAt: timestamp,
-                    }
-                  : note,
-              ),
-            }
-          })
+              updated = true
+              return {
+                ...project,
+                analysisNotes: project.analysisNotes.map((note) =>
+                  note.id === noteId
+                    ? {
+                        ...note,
+                        ...updates,
+                        createdAt: note.createdAt,
+                        updatedAt: timestamp,
+                      }
+                    : note,
+                ),
+              }
+            },
+            {
+              historyLabel: 'Update analysis note',
+              mergeKey: `analysis-note:${noteId}`,
+            },
+          )
 
           if (updated) logEvent('Analysis note updated', { projectId, noteId })
         },
@@ -596,15 +846,19 @@ export const useFushengluStore = create<StoreState>()(
 
           let deleted = false
 
-          commitProject(projectId, (project) => {
-            if (!project.analysisNotes.some((note) => note.id === noteId)) return undefined
+          commitProject(
+            projectId,
+            (project) => {
+              if (!project.analysisNotes.some((note) => note.id === noteId)) return undefined
 
-            deleted = true
-            return {
-              ...project,
-              analysisNotes: project.analysisNotes.filter((note) => note.id !== noteId),
-            }
-          })
+              deleted = true
+              return {
+                ...project,
+                analysisNotes: project.analysisNotes.filter((note) => note.id !== noteId),
+              }
+            },
+            { historyLabel: 'Delete analysis note' },
+          )
 
           if (deleted) logEvent('Analysis note deleted', { projectId, noteId })
         },
@@ -613,7 +867,10 @@ export const useFushengluStore = create<StoreState>()(
           commitProject(
             projectId,
             (project) => cleanImportedProject(project, importedProject),
-            { backupReason: 'replace-project-data' },
+            {
+              backupReason: 'replace-project-data',
+              historyLabel: 'Replace project data',
+            },
           )
           logEvent('Project data replaced', {
             projectId,
@@ -636,7 +893,10 @@ export const useFushengluStore = create<StoreState>()(
               ),
               updatedAt: now(),
             }),
-            { backupReason: 'restore-sample-data' },
+            {
+              backupReason: 'restore-sample-data',
+              historyLabel: 'Restore sample data',
+            },
           )
           logEvent('Sample data restored', { projectId })
         },
@@ -655,7 +915,10 @@ export const useFushengluStore = create<StoreState>()(
               entityNodePositions: {},
               eventNodePositions: {},
             }),
-            { backupReason: 'clear-project-data' },
+            {
+              backupReason: 'clear-project-data',
+              historyLabel: 'Clear project data',
+            },
           )
           logEvent('Project data cleared', { projectId })
         },
@@ -679,6 +942,9 @@ export const useFushengluStore = create<StoreState>()(
           sidebarCollapsed: Boolean(state.sidebarCollapsed),
           sidebarWidth: state.sidebarWidth || 288,
           backendStatus: 'checking',
+          undoStacksByProjectId: {},
+          redoStacksByProjectId: {},
+          saveStatusByProjectId: {},
         }
       },
     },
