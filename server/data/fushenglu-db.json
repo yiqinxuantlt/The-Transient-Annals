@@ -25,7 +25,7 @@
       "subtitle": "整理资治通鉴中记述的历史",
       "templateId": "history",
       "category": "history",
-      "updatedAt": "2026-06-19T15:14:20.657Z",
+      "updatedAt": "2026-06-20T02:01:57.581Z",
       "entities": [
         {
           "id": "entity-da47c516-7386-466a-ad3b-f16a6b37deb5",
@@ -65,7 +65,7 @@
       "subtitle": "以秦末楚汉为背景，整理人物联盟、战役节点与政治转折。",
       "templateId": "history",
       "category": "history",
-      "updatedAt": "2026-06-19T15:14:01.065Z",
+      "updatedAt": "2026-06-20T02:01:57.491Z",
       "entities": [
         {
           "id": "entity-liubang",
@@ -380,7 +380,7 @@
             "史记",
             "鸿门宴"
           ],
-          "createdAt": "2026-06-19T14:07:34.764Z"
+          "createdAt": "2026-06-19T16:25:40.515Z"
         },
         {
           "id": "library-note",
@@ -391,7 +391,7 @@
             "关中",
             "政治地理"
           ],
-          "createdAt": "2026-06-19T14:07:34.764Z"
+          "createdAt": "2026-06-19T16:25:40.515Z"
         }
       ],
       "analysisNotes": [],
@@ -451,7 +451,7 @@
       "subtitle": "用于组织游戏世界观中的势力、地点、主线事件与悬念回收。",
       "templateId": "fiction",
       "category": "worldbuilding",
-      "updatedAt": "2026-06-19T15:14:01.039Z",
+      "updatedAt": "2026-06-20T02:01:57.450Z",
       "entities": [
         {
           "id": "entity-main",
@@ -727,7 +727,7 @@
             "主题",
             "结构"
           ],
-          "createdAt": "2026-06-19T14:07:34.764Z"
+          "createdAt": "2026-06-19T16:25:40.515Z"
         },
         {
           "id": "library-quote",
@@ -738,7 +738,7 @@
             "信件",
             "伏笔"
           ],
-          "createdAt": "2026-06-19T14:07:34.764Z"
+          "createdAt": "2026-06-19T16:25:40.515Z"
         }
       ],
       "analysisNotes": [],
@@ -798,7 +798,7 @@
       "subtitle": "用一条身份谜团线串起人物、事件、关系与伏笔回收。",
       "templateId": "fiction",
       "category": "novel",
-      "updatedAt": "2026-06-19T15:14:01.085Z",
+      "updatedAt": "2026-06-20T02:01:57.530Z",
       "entities": [
         {
           "id": "entity-main",
@@ -1012,16 +1012,7 @@
           "style": {
             "lineStyle": "dashed",
             "tone": "cinnabar",
-            "edgeType": "smoothstep",
-            "lineWidth": 2,
-            "animated": true,
-            "opacity": 1,
-            "dashLength": 8,
-            "dashGap": 7,
-            "arrow": "target",
-            "lineCap": "round",
-            "labelVisible": true,
-            "shadow": true
+            "animated": true
           }
         },
         {
@@ -1083,7 +1074,7 @@
             "主题",
             "结构"
           ],
-          "createdAt": "2026-06-19T14:07:34.764Z"
+          "createdAt": "2026-06-19T16:25:40.515Z"
         },
         {
           "id": "library-quote",
@@ -1094,7 +1085,7 @@
             "信件",
             "伏笔"
           ],
-          "createdAt": "2026-06-19T14:07:34.764Z"
+          "createdAt": "2026-06-19T16:25:40.515Z"
         }
       ],
       "analysisNotes": [],
@@ -1126,24 +1117,24 @@
       },
       "eventNodePositions": {
         "event-letter": {
-          "x": 40,
-          "y": 270
+          "x": 30,
+          "y": 165
         },
         "event-secret": {
-          "x": 40,
-          "y": 40
+          "x": 335,
+          "y": 55
         },
         "event-leave": {
-          "x": 40,
-          "y": 500
+          "x": 335,
+          "y": 315
         },
         "event-reveal": {
-          "x": 410,
-          "y": 155
+          "x": 670,
+          "y": 170
         },
         "event-final": {
-          "x": 780,
-          "y": 155
+          "x": 1010,
+          "y": 170
         }
       }
     }
