@@ -10,6 +10,8 @@ let mainWindow: BrowserWindow | null = null
 let api: StartedFushengluApi | null = null
 let isQuitting = false
 
+app.setName('Fushenglu')
+
 function configureDesktopEnvironment() {
   const paths = resolveDesktopDataPaths(app.getPath('userData'))
 

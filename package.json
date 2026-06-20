@@ -23,6 +23,7 @@
   "build": {
     "appId": "com.fushenglu.desktop",
     "productName": "Fushenglu",
+    "electronDist": "node_modules/electron/dist",
     "directories": {
       "output": "release"
     },
