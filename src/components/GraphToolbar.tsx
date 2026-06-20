@@ -1,4 +1,5 @@
-import { Focus, Fullscreen, LayoutGrid, Maximize2, Plus, RotateCcw, SearchX } from 'lucide-react'
+import { Check, Focus, Fullscreen, LayoutGrid, Maximize2, Network, Plus, RotateCcw, SearchX } from 'lucide-react'
+import type { GraphLayoutView } from '../lib/graphLayoutViews'
 
 export type GraphWorkMode = 'browse' | 'reasoning' | 'organize'
 
@@ -7,7 +8,11 @@ type Props = {
   activeFilterCount: number
   immersive: boolean
   hasFocus: boolean
+  layoutView: GraphLayoutView
+  hasLayoutPreview: boolean
   onModeChange: (mode: GraphWorkMode) => void
+  onLayoutViewChange: (view: GraphLayoutView) => void
+  onApplyLayoutView: () => void
   onAddConnection: () => void
   onAutoLayout: () => void
   onFitView: () => void
@@ -22,12 +27,23 @@ const modeLabels: Array<{ value: GraphWorkMode; label: string }> = [
   { value: 'organize', label: '整理' },
 ]
 
+const layoutOptions: Array<{ value: GraphLayoutView; label: string }> = [
+  { value: 'free', label: '自由布局' },
+  { value: 'relationship', label: '人物关系' },
+  { value: 'timeline', label: '时间事件' },
+  { value: 'evidence', label: '证据资料' },
+]
+
 export default function GraphToolbar({
   mode,
   activeFilterCount,
   immersive,
   hasFocus,
+  layoutView,
+  hasLayoutPreview,
   onModeChange,
+  onLayoutViewChange,
+  onApplyLayoutView,
   onAddConnection,
   onAutoLayout,
   onFitView,
@@ -53,6 +69,27 @@ export default function GraphToolbar({
           </button>
         ))}
       </div>
+      <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-goldline/30 bg-paper-50/90 px-2 text-xs text-ink-600 shadow-soft backdrop-blur">
+        <Network size={15} />
+        <select
+          value={layoutView}
+          onChange={(event) => onLayoutViewChange(event.target.value as GraphLayoutView)}
+          className="bg-transparent text-xs text-ink-700 outline-none"
+          aria-label="布局视图"
+        >
+          {layoutOptions.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {hasLayoutPreview ? (
+        <button type="button" onClick={onApplyLayoutView} className="graph-tool-button">
+          <Check size={16} />
+          应用布局
+        </button>
+      ) : null}
       <button type="button" onClick={onAddConnection} className="graph-tool-button">
         <Plus size={16} />
         添加连接

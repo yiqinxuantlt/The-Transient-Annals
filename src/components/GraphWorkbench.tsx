@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useReactFlow } from 'reactflow'
-import { computeEntityLayout, computeEventLayout } from '../lib/dagreLayout'
+import { computeGraphLayoutView, type GraphLayoutView } from '../lib/graphLayoutViews'
 import {
   buildEvidenceNextSteps,
   collectGraphFilterOptions,
@@ -78,6 +79,9 @@ export default function GraphWorkbench({
 }: Props) {
   const template = getProjectTemplate(project.templateId, project.category)
   const { fitView } = useReactFlow()
+  const [searchParams] = useSearchParams()
+  const queryFocusNodeId = searchParams.get('focusNodeId')
+  const handledQueryFocusRef = useRef<string | null>(null)
   const [workMode, setWorkMode] = useState<GraphWorkMode>('browse')
   const [filters, setFilters] = useState(emptyGraphFilters)
   const [selection, setSelection] = useState<DetailSelection>(
@@ -95,6 +99,9 @@ export default function GraphWorkbench({
   const [composerOpen, setComposerOpen] = useState(false)
   const [layoutStatus, setLayoutStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle')
   const [fitViewKey, setFitViewKey] = useState(0)
+  const [layoutView, setLayoutView] = useState<GraphLayoutView>('free')
+  const [layoutPreviewPositions, setLayoutPreviewPositions] =
+    useState<Record<string, GraphNodePosition> | undefined>()
   const [chain, setChain] = useState<ChainState>(emptyChain)
 
   const graph = useMemo(() => getGraphRecords(project, graphMode), [graphMode, project])
@@ -162,6 +169,30 @@ export default function GraphWorkbench({
     () => buildEvidenceNextSteps(filteredGraph, chain.nodeIds, chain.edgeIds),
     [chain.edgeIds, chain.nodeIds, filteredGraph],
   )
+  const hasLayoutPreview =
+    layoutPreviewPositions != null && Object.keys(layoutPreviewPositions).length > 0
+
+  useEffect(() => {
+    if (!queryFocusNodeId) {
+      handledQueryFocusRef.current = null
+      return
+    }
+
+    const focusKey = `${graphMode}:${queryFocusNodeId}`
+    if (handledQueryFocusRef.current === focusKey) return
+
+    const nodeExists = graph.nodes.some((node) => node.id === queryFocusNodeId)
+    if (!nodeExists) return
+
+    handledQueryFocusRef.current = focusKey
+    if (!visibleNodeIds.has(queryFocusNodeId)) {
+      setFilters(emptyGraphFilters())
+    }
+    setFocusNodeId(queryFocusNodeId)
+    setSelection({ kind: graphMode === 'entities' ? 'entity' : 'event', id: queryFocusNodeId })
+    setActiveTab('detail')
+    setFitViewKey((value) => value + 1)
+  }, [graph.nodes, graphMode, queryFocusNodeId, visibleNodeIds])
 
   const openComposer = (sourceId = defaultDraft.sourceId, targetId = defaultDraft.targetId) => {
     const draftIsValid =
@@ -210,22 +241,34 @@ export default function GraphWorkbench({
     setComposerOpen(false)
   }
 
-  const runAutoLayout = () => {
+  const previewLayoutView = (view: GraphLayoutView) => {
+    setLayoutView(view)
+    if (view === 'free') {
+      setLayoutPreviewPositions(undefined)
+      setLayoutStatus('idle')
+      return
+    }
+
+    try {
+      const positions = computeGraphLayoutView(project, graphMode, view)
+      setLayoutPreviewPositions(positions)
+      setLayoutStatus('idle')
+      window.setTimeout(() => fitView({ duration: 280, padding: 0.25 }), 80)
+    } catch {
+      setLayoutStatus('failed')
+      window.setTimeout(() => setLayoutStatus('idle'), 1800)
+    }
+  }
+
+  const applyLayoutView = () => {
+    if (!hasLayoutPreview || !layoutPreviewPositions) return
+
     try {
       setLayoutStatus('saving')
-      const positions =
-        graphMode === 'entities'
-          ? computeEntityLayout(project.entities, project.entityRelations, {
-              rankdir: 'LR',
-              nodesep: 90,
-              ranksep: 140,
-            })
-          : computeEventLayout(project.events, project.eventLinks, {
-              rankdir: 'LR',
-              nodesep: 80,
-              ranksep: 130,
-            })
+      const positions = layoutPreviewPositions
       onBatchLayout(positions)
+      setLayoutPreviewPositions(undefined)
+      setLayoutView('free')
       setLayoutStatus('saved')
       window.setTimeout(() => setLayoutStatus('idle'), 1400)
       window.setTimeout(() => fitView({ duration: 280, padding: 0.25 }), 80)
@@ -233,6 +276,10 @@ export default function GraphWorkbench({
       setLayoutStatus('failed')
       window.setTimeout(() => setLayoutStatus('idle'), 1800)
     }
+  }
+
+  const runAutoLayout = () => {
+    previewLayoutView(graphMode === 'entities' ? 'relationship' : 'timeline')
   }
 
   const saveChain = () => {
@@ -443,6 +490,8 @@ export default function GraphWorkbench({
             onSelect={handleCanvasSelect}
             onConnectNodes={({ sourceId, targetId }) => openComposer(sourceId, targetId)}
             onNodePositionChange={(nodeId, position) => {
+              setLayoutPreviewPositions(undefined)
+              setLayoutView('free')
               setLayoutStatus('saving')
               onNodePositionChange(nodeId, position)
               setLayoutStatus('saved')
@@ -457,13 +506,18 @@ export default function GraphWorkbench({
             emptyDescription={activeFilterCount ? '清空筛选或放宽条件后再查看。' : '先添加人物、事件或连接，再进入图谱分析。'}
             layoutStatus={layoutStatus}
             fitViewKey={fitViewKey}
+            positionOverrides={layoutPreviewPositions}
             toolbar={
               <GraphToolbar
                 mode={workMode}
                 activeFilterCount={activeFilterCount}
                 immersive={immersive}
                 hasFocus={Boolean(focusNodeId)}
+                layoutView={layoutView}
+                hasLayoutPreview={hasLayoutPreview}
                 onModeChange={setWorkMode}
+                onLayoutViewChange={previewLayoutView}
+                onApplyLayoutView={applyLayoutView}
                 onAddConnection={() => openComposer()}
                 onAutoLayout={runAutoLayout}
                 onFitView={() => setFitViewKey((value) => value + 1)}

@@ -51,6 +51,7 @@ type Props = {
   emptyDescription?: string
   layoutStatus?: 'idle' | 'saving' | 'saved' | 'failed'
   fitViewKey?: number
+  positionOverrides?: Record<string, GraphNodePosition>
 }
 
 type EntityNodeData = {
@@ -343,7 +344,13 @@ function isValidAtYear(
   return true
 }
 
-function buildGraph(project: FushengProject, mode: Props['mode'], compact?: boolean, currentYear?: number | null) {
+function buildGraph(
+  project: FushengProject,
+  mode: Props['mode'],
+  compact?: boolean,
+  currentYear?: number | null,
+  positionOverrides?: Record<string, GraphNodePosition>,
+) {
   if (mode === 'entities') {
     const entities = project.entities.filter((entity) => isValidAtYear(entity, currentYear))
     const visibleEntityIds = new Set(entities.map((entity) => entity.id))
@@ -357,7 +364,10 @@ function buildGraph(project: FushengProject, mode: Props['mode'], compact?: bool
     const nodes: Node[] = entities.map((entity, index) => ({
       id: entity.id,
       type: 'archiveEntity',
-      position: project.entityNodePositions?.[entity.id] || entityPositions[index % entityPositions.length],
+      position:
+        positionOverrides?.[entity.id] ||
+        project.entityNodePositions?.[entity.id] ||
+        entityPositions[index % entityPositions.length],
       data: { entity, compact } satisfies EntityNodeData,
     }))
 
@@ -387,7 +397,10 @@ function buildGraph(project: FushengProject, mode: Props['mode'], compact?: bool
   const nodes: Node[] = events.map((event, index) => ({
     id: event.id,
     type: 'archiveEvent',
-    position: project.eventNodePositions?.[event.id] || eventPositions[index % eventPositions.length],
+    position:
+      positionOverrides?.[event.id] ||
+      project.eventNodePositions?.[event.id] ||
+      eventPositions[index % eventPositions.length],
     data: { event, compact } satisfies EventNodeData,
   }))
 
@@ -416,12 +429,13 @@ export default function GraphCanvas({
   emptyDescription,
   layoutStatus,
   fitViewKey,
+  positionOverrides,
 }: Props) {
   const flowInstanceRef = useRef<ReactFlowInstance | null>(null)
   const updateNodeInternals = useUpdateNodeInternals()
   const graph = useMemo(
-    () => buildGraph(project, mode, compact, currentYear),
-    [compact, currentYear, mode, project],
+    () => buildGraph(project, mode, compact, currentYear, positionOverrides),
+    [compact, currentYear, mode, positionOverrides, project],
   )
   const visibleGraph = useMemo(() => {
     const filteredNodes = visibleNodeIds
