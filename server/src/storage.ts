@@ -9,8 +9,10 @@ import {
 import { createSqliteStorage } from './sqliteStorage.ts'
 import type { DatabaseStorage, DatabaseUpdater } from './storageAdapter.ts'
 
-const currentFile = fileURLToPath(import.meta.url)
-const serverRoot = path.resolve(path.dirname(currentFile), '..')
+const currentFile = import.meta.url ? fileURLToPath(import.meta.url) : ''
+const serverRoot = currentFile
+  ? path.resolve(path.dirname(currentFile), '..')
+  : path.resolve(process.cwd(), 'server')
 const dataDirectory = path.resolve(serverRoot, 'data')
 const defaultDatabasePath = path.join(dataDirectory, 'fushenglu-db.json')
 const defaultSqlitePath = path.join(dataDirectory, 'fushenglu-db.sqlite')
