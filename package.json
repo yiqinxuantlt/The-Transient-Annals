@@ -1,7 +1,9 @@
 {
   "name": "fushenglu",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "A local visual knowledge graph workspace for people, events, timelines, and narrative archives.",
+  "author": "Tian Lutao",
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
@@ -13,12 +15,15 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "desktop:create-icon": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/create-windows-icon.ps1",
     "desktop:build-main": "esbuild electron/main.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist-electron/main.cjs --external:electron",
     "desktop:build-renderer": "cross-env VITE_DESKTOP=true VITE_API_BASE_URL=http://127.0.0.1:4177/api vite build",
     "desktop:build": "tsc -b && tsc -p server/tsconfig.json && npm run desktop:build-main && npm run desktop:build-renderer",
     "desktop:start": "electron .",
     "desktop:dev": "concurrently -k -n web,electron -c cyan,magenta \"cross-env VITE_DESKTOP=true VITE_API_BASE_URL=http://127.0.0.1:4177/api npm:dev:web\" \"wait-on http://127.0.0.1:5173 && npm run desktop:build-main && cross-env FUSHENGLU_ELECTRON_DEV_SERVER_URL=http://127.0.0.1:5173 npm run desktop:start\"",
-    "desktop:dist": "npm run desktop:build && electron-builder --win nsis"
+    "desktop:dist": "npm run desktop:create-icon && npm run desktop:build && electron-builder --win nsis",
+    "desktop:smoke": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desktop-smoke.ps1",
+    "release:check": "npm test && npm run desktop:dist && npm run desktop:smoke"
   },
   "build": {
     "appId": "com.fushenglu.desktop",
@@ -36,6 +41,7 @@
       "main": "dist-electron/main.cjs"
     },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",
