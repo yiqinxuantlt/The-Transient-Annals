@@ -349,10 +349,11 @@ export default function EntitiesPage() {
         }}
         onSubmit={saveEntity}
       >
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
+          {/* 头像区域 */}
           <div className="md:col-span-2">
-            <p className="mb-2 text-sm">人物头像</p>
-            <div className="flex flex-col gap-4 rounded-lg border border-ink-900/10 bg-paper-100/55 p-4 sm:flex-row sm:items-center">
+            <label className="mb-1.5 block text-sm font-medium text-ink-700">人物头像</label>
+            <div className="flex flex-col gap-4 rounded-xl border border-ink-900/8 bg-paper-100/50 p-4 sm:flex-row sm:items-center">
               <AvatarBadge
                 entity={{
                   name: draft.name || '人物',
@@ -363,8 +364,8 @@ export default function EntitiesPage() {
                 size="lg"
               />
               <div className="flex flex-1 flex-wrap gap-3">
-                <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-ink-900/10 bg-paper-50/70 px-4 text-sm text-ink-700 transition hover:bg-paper-50">
-                  <ImagePlus size={17} />
+                <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-ink-900/10 bg-paper-50/80 px-4 text-sm text-ink-600 shadow-sm transition hover:border-goldline/40 hover:bg-paper-50 hover:text-ink-800 hover:shadow-soft">
+                  <ImagePlus size={16} />
                   上传图片
                   <input
                     type="file"
@@ -377,24 +378,23 @@ export default function EntitiesPage() {
                   <button
                     type="button"
                     onClick={removeAvatar}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cinnabar/25 bg-cinnabar/10 px-4 text-sm text-cinnabar transition hover:bg-cinnabar/15"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-cinnabar/20 bg-cinnabar/8 px-4 text-sm text-cinnabar transition hover:bg-cinnabar/12"
                   >
-                    <X size={17} />
+                    <X size={16} />
                     移除头像
                   </button>
                 ) : null}
               </div>
             </div>
 
-            {/* 图片裁剪区域 */}
             {showCropper && tempImageUrl && (
-              <div className="mt-4 rounded-lg border border-goldline/25 bg-paper-50/70 p-4">
+              <div className="mt-4 rounded-xl border border-goldline/20 bg-paper-50/60 p-4">
                 <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-medium text-ink-800">调整头像显示区域</p>
+                  <p className="text-sm font-medium text-ink-700">调整头像显示区域</p>
                   <button
                     type="button"
                     onClick={() => setShowCropper(false)}
-                    className="text-xs text-ink-500 transition hover:text-ink-700"
+                    className="rounded-md px-2 py-1 text-xs text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-700"
                   >
                     完成裁剪
                   </button>
@@ -407,22 +407,30 @@ export default function EntitiesPage() {
               </div>
             )}
           </div>
-          <label className="grid gap-2 text-sm">
-            {template.entityFields.find((field) => field.key === 'name')?.label || '名称'}
+
+          {/* 基本信息 */}
+          <label className="grid gap-1.5 text-sm">
+            <span className="font-medium text-ink-700">
+              {template.entityFields.find((field) => field.key === 'name')?.label || '名称'}
+            </span>
             <input
               value={draft.name}
               onChange={(event) => setDraft((value) => ({ ...value, name: event.target.value }))}
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              className="min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 text-sm text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-goldline/60 focus:bg-paper-50 focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
+              placeholder="请输入名称"
             />
           </label>
-          <label className="grid gap-2 text-sm">
-            {template.entityFields.find((field) => field.key === 'type')?.label || '类型'}
+
+          <label className="grid gap-1.5 text-sm">
+            <span className="font-medium text-ink-700">
+              {template.entityFields.find((field) => field.key === 'type')?.label || '类型'}
+            </span>
             <select
               value={draft.type}
               onChange={(event) =>
                 setDraft((value) => ({ ...value, type: event.target.value as EntityType }))
               }
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              className="min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 text-sm text-ink-800 outline-none transition focus:border-goldline/60 focus:bg-paper-50 focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
             >
               {Object.entries(template.entityTypeLabels).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -431,92 +439,113 @@ export default function EntitiesPage() {
               ))}
             </select>
           </label>
+
           {template.entityFields.some((field) => field.key === 'identity') ? (
-            <label className="grid gap-2 text-sm">
-              身份
+            <label className="grid gap-1.5 text-sm">
+              <span className="font-medium text-ink-700">身份</span>
               <input
                 value={draft.identity}
                 onChange={(event) => setDraft((value) => ({ ...value, identity: event.target.value }))}
-                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+                className="min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 text-sm text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-goldline/60 focus:bg-paper-50 focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
+                placeholder="例如：西楚霸王"
               />
             </label>
           ) : null}
+
           {template.entityFields.some((field) => field.key === 'dynasty') ? (
-            <label className="grid gap-2 text-sm">
-              时代 / 朝代
+            <label className="grid gap-1.5 text-sm">
+              <span className="font-medium text-ink-700">时代 / 朝代</span>
               <input
                 value={draft.dynasty}
                 onChange={(event) => setDraft((value) => ({ ...value, dynasty: event.target.value }))}
-                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+                className="min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 text-sm text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-goldline/60 focus:bg-paper-50 focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
+                placeholder="例如：秦末汉初"
               />
             </label>
           ) : null}
+
           {template.entityFields.some((field) => field.key === 'birth') ? (
-            <label className="grid gap-2 text-sm">
-              生年
+            <label className="grid gap-1.5 text-sm">
+              <span className="font-medium text-ink-700">生年</span>
               <input
                 value={draft.birth}
                 onChange={(event) => setDraft((value) => ({ ...value, birth: event.target.value }))}
-                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+                className="min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 text-sm text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-goldline/60 focus:bg-paper-50 focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
+                placeholder="例如：前232年"
               />
             </label>
           ) : null}
+
           {template.entityFields.some((field) => field.key === 'death') ? (
-            <label className="grid gap-2 text-sm">
-              卒年
+            <label className="grid gap-1.5 text-sm">
+              <span className="font-medium text-ink-700">卒年</span>
               <input
                 value={draft.death}
                 onChange={(event) => setDraft((value) => ({ ...value, death: event.target.value }))}
-                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+                className="min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 text-sm text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-goldline/60 focus:bg-paper-50 focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
+                placeholder="例如：前202年"
               />
             </label>
           ) : null}
-          <label className="grid gap-2 text-sm">
-            阵营 / 所属势力
+
+          <label className="grid gap-1.5 text-sm">
+            <span className="font-medium text-ink-700">阵营 / 所属势力</span>
             <input
               value={draft.faction}
               onChange={(event) => setDraft((value) => ({ ...value, faction: event.target.value }))}
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              className="min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 text-sm text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-goldline/60 focus:bg-paper-50 focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
+              placeholder="例如：楚军"
             />
           </label>
-          <label className="grid gap-2 text-sm md:col-span-2">
-            {template.id === 'history' ? '政治目标 / 主要诉求' : '动机 / 目标'}
+
+          {/* 全宽字段 */}
+          <label className="grid gap-1.5 text-sm md:col-span-2">
+            <span className="font-medium text-ink-700">
+              {template.id === 'history' ? '政治目标 / 主要诉求' : '动机 / 目标'}
+            </span>
             <input
               value={draft.motivation}
               onChange={(event) =>
                 setDraft((value) => ({ ...value, motivation: event.target.value }))
               }
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              className="min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 text-sm text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-goldline/60 focus:bg-paper-50 focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
+              placeholder="简述其核心目标或诉求"
             />
           </label>
+
           {template.entityFields.some((field) => field.key === 'roleArc') ? (
-            <label className="grid gap-2 text-sm md:col-span-2">
-              人物弧光
+            <label className="grid gap-1.5 text-sm md:col-span-2">
+              <span className="font-medium text-ink-700">人物弧光</span>
               <input
                 value={draft.roleArc}
                 onChange={(event) =>
                   setDraft((value) => ({ ...value, roleArc: event.target.value }))
                 }
-                className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+                className="min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 text-sm text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-goldline/60 focus:bg-paper-50 focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
+                placeholder="描述人物在故事中的转变轨迹"
               />
             </label>
           ) : null}
-          <label className="grid gap-2 text-sm md:col-span-2">
-            简介
+
+          <label className="grid gap-1.5 text-sm md:col-span-2">
+            <span className="font-medium text-ink-700">简介</span>
             <textarea
               value={draft.description}
               onChange={(event) =>
                 setDraft((value) => ({ ...value, description: event.target.value }))
               }
-              className="min-h-28 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 py-3 outline-none focus:border-goldline"
+              rows={4}
+              className="min-h-[88px] resize-y rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 py-2.5 text-sm leading-relaxed text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-goldline/60 focus:bg-paper-50 focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
+              placeholder="补充人物背景、性格特点或关键经历"
             />
           </label>
-          <label className="grid gap-2 text-sm md:col-span-2">
-            标签
+
+          <label className="grid gap-1.5 text-sm md:col-span-2">
+            <span className="font-medium text-ink-700">标签</span>
             <input
               value={tagText}
               onChange={(event) => setTagText(event.target.value)}
-              className="min-h-11 rounded-lg border border-ink-900/10 bg-paper-50/70 px-3 outline-none focus:border-goldline"
+              className="min-h-10 rounded-lg border border-ink-900/10 bg-paper-50/80 px-3.5 text-sm text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-goldline/60 focus:bg-paper-50 focus:focus:shadow-[0_0_0_3px_rgb(var(--goldline)/0.08)]"
               placeholder="用逗号分隔，例如：核心视角，隐瞒"
             />
           </label>

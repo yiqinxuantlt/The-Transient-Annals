@@ -20,7 +20,7 @@ export default function ArchivePageHeader({
   actions,
 }: Props) {
   return (
-    <section className="archive-page-header archive-card paper-grain rounded-lg border border-goldline/25 p-5 shadow-soft md:p-6">
+    <section className="archive-page-header archive-card paper-grain rounded-xl border border-goldline/20 bg-paper-50/75 p-5 shadow-soft backdrop-blur-sm md:p-6">
       <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex min-w-0 gap-4">
           <ScrollRibbon label={ribbonLabel} />

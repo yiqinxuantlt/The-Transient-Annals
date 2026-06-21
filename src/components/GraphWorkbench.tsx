@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useReactFlow } from 'reactflow'
 import { computeGraphLayoutView, type GraphLayoutView } from '../lib/graphLayoutViews'
@@ -172,6 +172,19 @@ export default function GraphWorkbench({
   const hasLayoutPreview =
     layoutPreviewPositions != null && Object.keys(layoutPreviewPositions).length > 0
 
+  const handleQueryFocus = useCallback(
+    (nodeId: string) => {
+      if (!visibleNodeIds.has(nodeId)) {
+        setFilters(emptyGraphFilters())
+      }
+      setFocusNodeId(nodeId)
+      setSelection({ kind: graphMode === 'entities' ? 'entity' : 'event', id: nodeId })
+      setActiveTab('detail')
+      setFitViewKey((value) => value + 1)
+    },
+    [visibleNodeIds, graphMode],
+  )
+
   useEffect(() => {
     if (!queryFocusNodeId) {
       handledQueryFocusRef.current = null
@@ -185,14 +198,10 @@ export default function GraphWorkbench({
     if (!nodeExists) return
 
     handledQueryFocusRef.current = focusKey
-    if (!visibleNodeIds.has(queryFocusNodeId)) {
-      setFilters(emptyGraphFilters())
-    }
-    setFocusNodeId(queryFocusNodeId)
-    setSelection({ kind: graphMode === 'entities' ? 'entity' : 'event', id: queryFocusNodeId })
-    setActiveTab('detail')
-    setFitViewKey((value) => value + 1)
-  }, [graph.nodes, graphMode, queryFocusNodeId, visibleNodeIds])
+    // Defer state updates to avoid cascading renders
+    const timer = window.setTimeout(() => handleQueryFocus(queryFocusNodeId), 0)
+    return () => window.clearTimeout(timer)
+  }, [graph.nodes, graphMode, queryFocusNodeId, handleQueryFocus])
 
   const openComposer = (sourceId = defaultDraft.sourceId, targetId = defaultDraft.targetId) => {
     const draftIsValid =

@@ -6,7 +6,7 @@ type Props = {
 
 export default function ArchiveToolbar({ children }: Props) {
   return (
-    <div className="archive-toolbar mt-5 flex flex-col gap-3 rounded-lg border border-goldline/20 bg-paper-100/48 p-3 shadow-sm md:flex-row md:items-center">
+    <div className="archive-toolbar mt-5 flex flex-col gap-3 rounded-xl border border-goldline/15 bg-paper-50/60 p-3 shadow-sm backdrop-blur-sm md:flex-row md:items-center">
       {children}
     </div>
   )

@@ -256,7 +256,7 @@ export default function DetailPanel({
   return (
     <aside
       className={[
-        'archive-card paper-grain rounded-lg border border-goldline/25 p-5 shadow-archive',
+        'archive-card paper-grain rounded-xl border border-goldline/20 bg-paper-50/75 p-5 shadow-archive backdrop-blur-sm',
         sticky ? 'xl:sticky xl:top-28 xl:max-h-[calc(100dvh-8rem)] xl:overflow-auto' : '',
       ].join(' ')}
     >

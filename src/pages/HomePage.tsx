@@ -1,4 +1,4 @@
-﻿import { ArrowRight, BookOpen, GitBranch, Network, ScrollText, Sparkles } from 'lucide-react'
+﻿﻿import { ArrowRight, BookOpen, GitBranch, Network, ScrollText, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ReactFlowProvider } from 'reactflow'
 import GraphCanvas from '../components/GraphCanvas'

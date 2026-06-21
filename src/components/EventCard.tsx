@@ -1,4 +1,4 @@
-﻿import { CalendarDays, MapPin, Pencil, Trash2 } from 'lucide-react'
+import { CalendarDays, MapPin, Pencil, Trash2 } from 'lucide-react'
 import type { StoryEvent } from '../types'
 
 type Props = {
@@ -21,8 +21,8 @@ export default function EventCard({
   return (
     <article
       className={[
-        'archive-card paper-grain rounded-lg border p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:shadow-archive',
-        selected ? 'border-cinnabar/50 ring-2 ring-cinnabar/10' : 'border-goldline/18',
+        'archive-card paper-grain rounded-xl border bg-paper-50/70 p-5 text-left shadow-soft backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-archive',
+        selected ? 'border-cinnabar/50 ring-2 ring-cinnabar/10' : 'border-goldline/15',
       ].join(' ')}
     >
       <button type="button" onClick={onSelect} className="block w-full text-left">

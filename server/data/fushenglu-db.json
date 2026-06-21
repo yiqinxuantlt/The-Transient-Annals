@@ -25,7 +25,7 @@
       "subtitle": "整理资治通鉴中记述的历史",
       "templateId": "history",
       "category": "history",
-      "updatedAt": "2026-06-20T02:01:57.581Z",
+      "updatedAt": "2026-06-21T07:01:38.866Z",
       "entities": [
         {
           "id": "entity-da47c516-7386-466a-ad3b-f16a6b37deb5",
@@ -65,7 +65,7 @@
       "subtitle": "以秦末楚汉为背景，整理人物联盟、战役节点与政治转折。",
       "templateId": "history",
       "category": "history",
-      "updatedAt": "2026-06-20T02:01:57.491Z",
+      "updatedAt": "2026-06-21T07:01:38.801Z",
       "entities": [
         {
           "id": "entity-liubang",
@@ -380,7 +380,7 @@
             "史记",
             "鸿门宴"
           ],
-          "createdAt": "2026-06-19T16:25:40.515Z"
+          "createdAt": "2026-06-21T02:31:03.832Z"
         },
         {
           "id": "library-note",
@@ -391,7 +391,7 @@
             "关中",
             "政治地理"
           ],
-          "createdAt": "2026-06-19T16:25:40.515Z"
+          "createdAt": "2026-06-21T02:31:03.832Z"
         }
       ],
       "analysisNotes": [],
@@ -405,8 +405,8 @@
           "y": 150
         },
         "entity-zhangliang": {
-          "x": 345,
-          "y": 40
+          "x": 324,
+          "y": -120
         },
         "entity-hanxin": {
           "x": 355,
@@ -451,7 +451,7 @@
       "subtitle": "用于组织游戏世界观中的势力、地点、主线事件与悬念回收。",
       "templateId": "fiction",
       "category": "worldbuilding",
-      "updatedAt": "2026-06-20T02:01:57.450Z",
+      "updatedAt": "2026-06-21T07:01:38.935Z",
       "entities": [
         {
           "id": "entity-main",
@@ -727,7 +727,7 @@
             "主题",
             "结构"
           ],
-          "createdAt": "2026-06-19T16:25:40.515Z"
+          "createdAt": "2026-06-21T02:31:03.832Z"
         },
         {
           "id": "library-quote",
@@ -738,7 +738,7 @@
             "信件",
             "伏笔"
           ],
-          "createdAt": "2026-06-19T16:25:40.515Z"
+          "createdAt": "2026-06-21T02:31:03.832Z"
         }
       ],
       "analysisNotes": [],
@@ -798,7 +798,7 @@
       "subtitle": "用一条身份谜团线串起人物、事件、关系与伏笔回收。",
       "templateId": "fiction",
       "category": "novel",
-      "updatedAt": "2026-06-20T02:01:57.530Z",
+      "updatedAt": "2026-06-21T07:01:38.901Z",
       "entities": [
         {
           "id": "entity-main",
@@ -1074,7 +1074,7 @@
             "主题",
             "结构"
           ],
-          "createdAt": "2026-06-19T16:25:40.515Z"
+          "createdAt": "2026-06-21T02:31:03.832Z"
         },
         {
           "id": "library-quote",
@@ -1085,7 +1085,7 @@
             "信件",
             "伏笔"
           ],
-          "createdAt": "2026-06-19T16:25:40.515Z"
+          "createdAt": "2026-06-21T02:31:03.832Z"
         }
       ],
       "analysisNotes": [],
